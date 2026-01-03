@@ -223,7 +223,7 @@ async def execute_verification(callback: types.CallbackQuery, state: FSMContext)
     service_key = data['service']
     verif_id = data.get('verification_id')
     original_url = data.get('original_url')
-    custom_inputs = data.get('custom_inputs', {{}}) 
+    custom_inputs = data.get('custom_inputs', {}) 
     
     cost = SERVICES[service_key]['cost']
     user_id = callback.from_user.id
