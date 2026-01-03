@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - MSVERIFY{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-header {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    border-radius: 24px;
+    padding: 3rem 2rem;
+    margin-bottom: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 2rem 1.5rem;
+        border-radius: 16px;
+    }
+    
+    .stat-card-modern {
+        margin-bottom: 1rem;
+    }
+    
+    .stat-icon-modern {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-header {
+        padding: 1.5rem 1rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+}
+
+.stat-card-modern {
+    background: rgba(10, 10, 10, 0.9);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2), 0 5px 20px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    height: 100%;
+    color: #ffffff;
+}
+
+.stat-card-modern:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.4), 0 15px 40px rgba(0,0,0,0.6);
+    border-color: rgba(139, 92, 246, 0.6);
+}
+
+.stat-icon-modern {
+    width: 70px;
+    height: 70px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.action-card {
+    background: rgba(10, 10, 10, 0.9);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2), 0 5px 20px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #ffffff;
+}
+
+.action-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(139, 92, 246, 0.6);
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.4), 0 10px 30px rgba(0,0,0,0.6);
+}
+
+.quick-action-btn {
+    width: 100%;
+    padding: 1.2rem;
+    border-radius: 15px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.activity-item {
+    background: rgba(10, 10, 10, 0.8);
+    border-radius: 15px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--neon-purple);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2), 0 2px 10px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+    color: #ffffff;
+}
+
+.activity-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3), 0 5px 20px rgba(0,0,0,0.6);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div class="container position-relative">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-5 fw-bold mb-2">Welcome back, {{ user.full_name or user.username }}! 👋</h1>
+                <p class="lead mb-0" style="opacity: 0.9;">Manage your verifications and track your progress</p>
+            </div>
+            <div class="col-lg-4 text-end">
+                <div class="d-inline-block bg-white bg-opacity-10 rounded-4 p-3 backdrop-blur">
+                    <div class="text-warning fw-bold" style="font-size: 0.9rem;">MEMBER SINCE</div>
+                    <div class="fw-bold" style="font-size: 1.1rem;">{{ user.created_at[:10] if user.created_at else 'Today' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card-modern">
+                <div class="stat-icon-modern bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-coin"></i>
+                </div>
+                <h6 class="text-muted text-uppercase mb-2" style="font-size: 0.85rem; letter-spacing: 1px;">Points Balance</h6>
+                <h2 class="fw-bold mb-0 user-balance" style="font-size: 2.5rem; color: #667eea;">{{ user.balance }}</h2>
+                <p class="text-muted small mb-0 mt-2">Available for verification</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="stat-card-modern">
+                <div class="stat-icon-modern bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-gift-fill"></i>
+                </div>
+                <h6 class="text-muted text-uppercase mb-2" style="font-size: 0.85rem; letter-spacing: 1px;">Invite Code</h6>
+                <h3 class="fw-bold mb-2" style="font-size: 1.8rem; color: #10B981;">{{ user.invite_code }}</h3>
+                <button class="btn btn-sm btn-success" onclick="copyToClipboard('{{ user.invite_code }}', 'copyInviteBtn')" id="copyInviteBtn">
+                    <i class="bi bi-clipboard"></i> Copy Code
+                </button>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="stat-card-modern">
+                <div class="stat-icon-modern bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <h6 class="text-muted text-uppercase mb-2" style="font-size: 0.85rem; letter-spacing: 1px;">Last Check-in</h6>
+                <h4 class="fw-bold mb-2" style="font-size: 1.5rem; color: #06B6D4;">
+                    {% if user.last_checkin %}
+                        {{ user.last_checkin[:10] }}
+                    {% else %}
+                        Never
+                    {% endif %}
+                </h4>
+                <button class="btn btn-sm btn-info text-white" onclick="dailyCheckin()">
+                    <i class="bi bi-calendar-check"></i> Check-in Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">
+                        <i class="bi bi-lightning-charge-fill text-warning"></i> Quick Actions
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <a href="/verify" class="action-card text-decoration-none text-dark d-block">
+                                <div class="text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-patch-check-fill" style="font-size: 2.5rem; color: #667eea;"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-2">Start Verification</h6>
+                                    <p class="text-muted small mb-0">Verify your identity</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="/how-to-use" class="action-card text-decoration-none text-dark d-block">
+                                <div class="text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-book-fill" style="font-size: 2.5rem; color: #10B981;"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-2">How to Use</h6>
+                                    <p class="text-muted small mb-0">View detailed guide</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="action-card" onclick="showRedeemModal()">
+                                <div class="text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-gift-fill" style="font-size: 2.5rem; color: #fbbf24;"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-2">Redeem Code</h6>
+                                    <p class="text-muted small mb-0">Get bonus points</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm" style="border-radius: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body p-4 text-white">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-people-fill"></i> Invite Friends
+                    </h5>
+                    <p class="mb-3" style="opacity: 0.9;">Share your invite code and earn <strong>+5 points</strong> for each friend!</p>
+                    <div class="bg-white bg-opacity-20 rounded-3 p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-uppercase" style="opacity: 0.8;">Your Code</small>
+                                <h4 class="fw-bold mb-0">{{ user.invite_code }}</h4>
+                            </div>
+                            <button class="btn btn-warning btn-sm" onclick="copyToClipboard('{{ user.invite_code }}')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <small style="opacity: 0.8;"><i class="bi bi-info-circle"></i> Friends get +2 points on signup</small>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+
+    <!-- Services Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-grid"></i> Available Services</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="card service-card success">
+                                <div class="card-body text-center">
+                                    <div class="service-icon gemini text-white">
+                                        <i class="bi bi-star-fill"></i>
+                                    </div>
+                                    <h6>Gemini One Pro</h6>
+                                    <span class="badge bg-success">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card service-card success">
+                                <div class="card-body text-center">
+                                    <div class="service-icon chatgpt text-white">
+                                        <i class="bi bi-chat-dots-fill"></i>
+                                    </div>
+                                    <h6>ChatGPT Teacher K12</h6>
+                                    <span class="badge bg-success">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card service-card success">
+                                <div class="card-body text-center">
+                                    <div class="service-icon spotify text-white">
+                                        <i class="bi bi-music-note-beamed"></i>
+                                    </div>
+                                    <h6>Spotify Student</h6>
+                                    <span class="badge bg-success">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card service-card success">
+                                <div class="card-body text-center">
+                                    <div class="service-icon bolt text-white">
+                                        <i class="bi bi-lightning-charge-fill"></i>
+                                    </div>
+                                    <h6>Bolt.new Teacher</h6>
+                                    <span class="badge bg-success">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card service-card beta">
+                                <div class="card-body text-center">
+                                    <div class="service-icon youtube text-white">
+                                        <i class="bi bi-youtube"></i>
+                                    </div>
+                                    <h6>YouTube Premium</h6>
+                                    <span class="badge bg-warning">Beta</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card service-card">
+                                <div class="card-body text-center">
+                                    <div class="service-icon bg-secondary text-white">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </div>
+                                    <h6>More Coming Soon</h6>
+                                    <span class="badge bg-secondary">Coming</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Load user balance on page load
+    loadUserBalance();
+});
+</script>
+{% endblock %}

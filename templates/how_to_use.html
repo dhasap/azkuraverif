@@ -1,0 +1,571 @@
+{% extends "base.html" %}
+
+{% block title %}How to Use - MSVERIFY{% endblock %}
+
+{% block extra_css %}
+<style>
+.hero-guide {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 5rem 0 3rem;
+}
+
+.step-card {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.step-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+}
+
+.step-number {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    margin: -40px auto 1.5rem;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+.service-guide {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+}
+
+.service-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.code-block {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    overflow-x: auto;
+}
+
+.alert-custom {
+    border-radius: 15px;
+    border: none;
+    padding: 1.5rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 40px;
+    margin-bottom: 2rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+}
+
+.timeline-item::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 17px;
+    width: 2px;
+    height: calc(100% + 15px);
+    background: linear-gradient(180deg, #667eea 0%, rgba(102, 126, 234, 0.2) 100%);
+}
+
+.timeline-item:last-child::after {
+    display: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-guide text-white">
+    <div class="container">
+        <div class="text-center">
+            <div class="badge bg-warning text-dark px-3 py-2 mb-3">
+                <i class="bi bi-book"></i> Complete Guide
+            </div>
+            <h1 class="display-3 fw-bold mb-4">How to Use MSVERIFY</h1>
+            <p class="lead mb-4" style="max-width: 800px; margin: 0 auto;">
+                Step-by-step guide to help you verify your student or teacher identity across multiple platforms
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Getting Started -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold mb-3">Getting Started</h2>
+            <p class="lead text-muted">Follow these simple steps to begin</p>
+        </div>
+        
+        <div class="row g-4 mb-5">
+            <div class="col-md-6 col-lg-3">
+                <div class="step-card p-4 bg-white">
+                    <div class="step-number">1</div>
+                    <h5 class="fw-bold text-center mb-3">Create Account</h5>
+                    <p class="text-muted text-center small">Register with your email address</p>
+                    <div class="text-center">
+                        <a href="/register" class="btn btn-sm btn-outline-primary">Sign Up</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="step-card p-4 bg-white">
+                    <div class="step-number">2</div>
+                    <h5 class="fw-bold text-center mb-3">Get Points</h5>
+                    <p class="text-muted text-center small">Earn through check-ins, invites, or codes</p>
+                    <div class="text-center">
+                        <span class="badge bg-warning">1 point needed</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="step-card p-4 bg-white">
+                    <div class="step-number">3</div>
+                    <h5 class="fw-bold text-center mb-3">Submit URL</h5>
+                    <p class="text-muted text-center small">Paste your SheerID verification link</p>
+                    <div class="text-center">
+                        <a href="/verify" class="btn btn-sm btn-outline-success">Verify Now</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="step-card p-4 bg-white">
+                    <div class="step-number">4</div>
+                    <h5 class="fw-bold text-center mb-3">Wait 1-2 Min</h5>
+                    <p class="text-muted text-center small">Automatic verification processing</p>
+                    <div class="text-center">
+                        <span class="badge bg-success">Done!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Points System -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="display-6 fw-bold mb-4 text-center">Points System</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-calendar-check text-primary" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="fw-bold mb-3">Daily Check-in</h5>
+                        <h2 class="text-primary fw-bold mb-2">+1 Point</h2>
+                        <p class="text-muted small">Check in once every 24 hours to earn 1 point</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-people text-success" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="fw-bold mb-3">Invite Friends</h5>
+                        <h2 class="text-success fw-bold mb-2">+5 Points</h2>
+                        <p class="text-muted small">Earn 5 points for each friend who registers with your invite code</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-ticket-perforated text-warning" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="fw-bold mb-3">Redemption Codes</h5>
+                        <h2 class="text-warning fw-bold mb-2">Varies</h2>
+                        <p class="text-muted small">Use special codes from admins to get bonus points</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-custom alert-info mt-4">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle-fill fs-3 me-3"></i>
+                <div>
+                    <h6 class="fw-bold mb-1">Important</h6>
+                    <p class="mb-0">Each verification costs 1 point. If verification fails, your point will be automatically refunded.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Service Guides -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="display-6 fw-bold mb-5 text-center">Platform-Specific Guides</h2>
+        
+        <!-- Gemini One Pro -->
+        <div class="service-guide">
+            <div class="d-flex align-items-center mb-4">
+                <div class="service-icon me-3">
+                    <i class="bi bi-star-fill text-warning"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-1">Gemini One Pro (Google AI Studio)</h3>
+                    <span class="badge bg-success">Active</span>
+                    <span class="badge bg-info ms-2">Teacher</span>
+                </div>
+            </div>
+            
+            <h5 class="fw-bold mb-3">Step-by-Step Process:</h5>
+            <div class="timeline-item">
+                <h6 class="fw-bold">1. Access Google AI Studio</h6>
+                <p class="text-muted mb-2">Visit <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a> and sign in with your Google account</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">2. Navigate to Education Discount</h6>
+                <p class="text-muted mb-2">Look for "Teacher Verification" or "Education Discount" option in your account settings</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">3. Start Verification Process</h6>
+                <p class="text-muted mb-2">You'll be redirected to SheerID verification page</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">4. Copy the SheerID URL</h6>
+                <p class="text-muted mb-2">The URL should look like:</p>
+                <div class="code-block">
+                    https://services.sheerid.com/verify/[PROGRAM_ID]/?...
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">5. Submit to MSVERIFY</h6>
+                <p class="text-muted mb-2">Go to <a href="/verify">Verify page</a>, select "Gemini One Pro", paste the URL, and submit</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">6. Wait for Completion</h6>
+                <p class="text-muted mb-2">Processing takes 1-2 minutes. You'll receive a notification once completed</p>
+            </div>
+            
+            <div class="alert alert-custom alert-warning mt-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Note:</strong> Make sure you don't close or refresh the SheerID page until verification is complete
+            </div>
+        </div>
+        
+        <!-- ChatGPT K12 -->
+        <div class="service-guide">
+            <div class="d-flex align-items-center mb-4">
+                <div class="service-icon me-3">
+                    <i class="bi bi-chat-dots-fill text-primary"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-1">ChatGPT Teacher K12 (OpenAI)</h3>
+                    <span class="badge bg-success">Active</span>
+                    <span class="badge bg-info ms-2">Teacher</span>
+                </div>
+            </div>
+            
+            <h5 class="fw-bold mb-3">Step-by-Step Process:</h5>
+            <div class="timeline-item">
+                <h6 class="fw-bold">1. Access ChatGPT Education</h6>
+                <p class="text-muted mb-2">Visit <a href="https://chatgpt.com/education" target="_blank">chatgpt.com/education</a> or look for education discount in your OpenAI account</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">2. Select Teacher K12 Verification</h6>
+                <p class="text-muted mb-2">Choose the K12 teacher verification option</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">3. Get SheerID URL</h6>
+                <p class="text-muted mb-2">Copy the complete SheerID verification URL from your browser address bar</p>
+                <div class="code-block">
+                    https://services.sheerid.com/verify/[PROGRAM_ID]/?...
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">4. Submit to MSVERIFY</h6>
+                <p class="text-muted mb-2">Select "ChatGPT K12" service and paste your URL</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">5. Processing</h6>
+                <p class="text-muted mb-2">Our system will automatically complete the verification form and submit it</p>
+            </div>
+            
+            <div class="alert alert-custom alert-success mt-3">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong>Success Rate:</strong> 99% success rate for ChatGPT K12 teacher verification
+            </div>
+        </div>
+        
+        <!-- Spotify Student -->
+        <div class="service-guide">
+            <div class="d-flex align-items-center mb-4">
+                <div class="service-icon me-3">
+                    <i class="bi bi-music-note-beamed text-success"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-1">Spotify Premium Student</h3>
+                    <span class="badge bg-success">Active</span>
+                    <span class="badge bg-primary ms-2">Student</span>
+                </div>
+            </div>
+            
+            <h5 class="fw-bold mb-3">Step-by-Step Process:</h5>
+            <div class="timeline-item">
+                <h6 class="fw-bold">1. Access Spotify Student</h6>
+                <p class="text-muted mb-2">Visit <a href="https://www.spotify.com/student" target="_blank">spotify.com/student</a></p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">2. Click "Get Started"</h6>
+                <p class="text-muted mb-2">You'll be redirected to SheerID for student verification</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">3. Copy SheerID URL</h6>
+                <p class="text-muted mb-2">From the SheerID verification page, copy the complete URL</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">4. Submit to MSVERIFY</h6>
+                <p class="text-muted mb-2">Select "Spotify Student" and paste your URL</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">5. Automatic Verification</h6>
+                <p class="text-muted mb-2">System will fill in student information and complete verification</p>
+            </div>
+        </div>
+        
+        <!-- Bolt.new Teacher -->
+        <div class="service-guide">
+            <div class="d-flex align-items-center mb-4">
+                <div class="service-icon me-3">
+                    <i class="bi bi-lightning-charge-fill text-danger"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-1">Bolt.new Teacher Discount</h3>
+                    <span class="badge bg-success">Active</span>
+                    <span class="badge bg-info ms-2">Teacher</span>
+                    <span class="badge bg-warning ms-2">Auto Code</span>
+                </div>
+            </div>
+            
+            <h5 class="fw-bold mb-3">Step-by-Step Process:</h5>
+            <div class="timeline-item">
+                <h6 class="fw-bold">1. Access Bolt.new Education</h6>
+                <p class="text-muted mb-2">Visit Bolt.new and look for teacher/education discount section</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">2. Start Teacher Verification</h6>
+                <p class="text-muted mb-2">You'll be directed to SheerID verification</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">3. Copy SheerID URL</h6>
+                <p class="text-muted mb-2">Get the complete URL from the SheerID page</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">4. Submit to MSVERIFY</h6>
+                <p class="text-muted mb-2">Select "Bolt.new Teacher" service and submit</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">5. Automatic Code Retrieval</h6>
+                <p class="text-muted mb-2">System will automatically verify and retrieve your discount code</p>
+            </div>
+            
+            <div class="alert alert-custom alert-info mt-3">
+                <i class="bi bi-robot me-2"></i>
+                <strong>Special Feature:</strong> Bolt.new verification includes automatic discount code retrieval!
+            </div>
+        </div>
+        
+        <!-- YouTube Premium -->
+        <div class="service-guide">
+            <div class="d-flex align-items-center mb-4">
+                <div class="service-icon me-3">
+                    <i class="bi bi-youtube text-danger"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-1">YouTube Premium Student</h3>
+                    <span class="badge bg-warning">Beta</span>
+                    <span class="badge bg-primary ms-2">Student</span>
+                </div>
+            </div>
+            
+            <h5 class="fw-bold mb-3">Step-by-Step Process:</h5>
+            <div class="timeline-item">
+                <h6 class="fw-bold">1. Access YouTube Premium Student</h6>
+                <p class="text-muted mb-2">Visit YouTube Premium student page</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">2. Start Verification</h6>
+                <p class="text-muted mb-2">Click on student verification option</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">3. Get SheerID URL</h6>
+                <p class="text-muted mb-2">Copy the SheerID verification URL</p>
+            </div>
+            
+            <div class="timeline-item">
+                <h6 class="fw-bold">4. Submit to MSVERIFY</h6>
+                <p class="text-muted mb-2">Select "YouTube Premium" and paste URL</p>
+            </div>
+            
+            <div class="alert alert-custom alert-warning mt-3">
+                <i class="bi bi-exclamation-circle-fill me-2"></i>
+                <strong>Beta Status:</strong> This service is currently in beta. Success rate may vary.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="display-6 fw-bold mb-5 text-center">Frequently Asked Questions</h2>
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                What happens if my verification fails?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                If your verification fails for any reason, your point will be automatically refunded to your account. You can try again or contact support for assistance.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                How long does verification take?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Most verifications are completed within 1-2 minutes. Complex cases may take up to 5 minutes. You'll receive a notification once completed.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                Is my data safe?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Yes! We use industry-standard encryption and security measures. We never store your verification credentials, and all processing is done securely.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                Can I use the same verification for multiple platforms?
+                            </button>
+                        </h2>
+                        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                No, each platform requires its own separate verification. Each verification costs 1 point.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                                How do I get more points?
+                            </button>
+                        </h2>
+                        <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                You can earn points through: <br>
+                                • Daily check-in (+1 point every 24 hours)<br>
+                                • Inviting friends (+5 points per successful referral)<br>
+                                • Using redemption codes (varies)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Support CTA -->
+<section class="py-5">
+    <div class="container">
+        <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card-body p-5 text-center text-white">
+                <h3 class="display-6 fw-bold mb-3">Need Help?</h3>
+                <p class="lead mb-4">Our support team is here to help you with any questions</p>
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="/dashboard" class="btn btn-warning btn-lg px-5">
+                        <i class="bi bi-speedometer2"></i> Go to Dashboard
+                    </a>
+                    <a href="/verify" class="btn btn-light btn-lg px-5">
+                        <i class="bi bi-patch-check"></i> Start Verifying
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
