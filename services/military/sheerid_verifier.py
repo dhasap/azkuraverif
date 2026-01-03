@@ -1,4 +1,4 @@
-"""Program Utama Verifikasi Militer SheerID"""
+"""Program Utama Verifikasi Militer SheerID - Smart Step Discovery"""
 import re
 import random
 import logging
@@ -28,10 +28,6 @@ class SheerIDVerifier:
     def _generate_device_fingerprint() -> str:
         chars = '0123456789abcdef'
         return ''.join(random.choice(chars) for _ in range(32))
-
-    @staticmethod
-    def normalize_url(url: str) -> str:
-        return url
 
     @staticmethod
     def parse_verification_id(url: str) -> Optional[str]:
@@ -70,132 +66,115 @@ class SheerIDVerifier:
         last_name: str = None,
         email: str = None,
         birth_date: str = None,
-        status: str = None,
         branch: str = None,
-        discharge_date: str = None
+        discharge_date: str = None,
+        **kwargs # Menampung data lain dari database
     ) -> Dict:
         try:
-            current_step = "initial"
-
-            if not first_name or not last_name:
-                name = NameGenerator.generate()
-                first_name = name["first_name"]
-                last_name = name["last_name"]
-
-            if not email:
-                email = generate_email(first_name, last_name)
-            if not birth_date:
-                birth_date = generate_birth_date()
-            if not discharge_date:
-                discharge_date = generate_discharge_date()
-            
-            status = status or config.DEFAULT_STATUS
+            # 1. Siapkan Data
+            name_gen = NameGenerator.generate()
+            first_name = first_name or name_gen["first_name"]
+            last_name = last_name or name_gen["last_name"]
+            email = email or generate_email(first_name, last_name)
+            birth_date = birth_date or generate_birth_date()
+            discharge_date = discharge_date or generate_discharge_date()
             branch = branch or config.DEFAULT_BRANCH
+            # Military Status sesuai list ChatGPT tadi
+            military_status = 'MILITARY_VETERAN_RETIREE'
 
-            logger.info(f"Informasi Militer: {first_name} {last_name}")
-            logger.info(f"Status: {status} | Branch: {branch}")
-            logger.info(f"Discharge: {discharge_date}")
             logger.info(f"ID Verifikasi: {self.verification_id}")
 
-            # 1. Buat Dokumen DD-214
-            logger.info("Langkah 1/4: Membuat dokumen DD-214...")
-            img_data = await generate_military_png(first_name, last_name, birth_date, discharge_date, branch)
-            file_size = len(img_data)
-            logger.info(f"✅ Ukuran PNG: {file_size / 1024:.2f}KB")
-
             async with httpx.AsyncClient(timeout=30.0) as client:
-                # 2. Kirim Informasi Personal
-                logger.info("Langkah 2/4: Mengirim informasi militer...")
+                # 2. DISCOVERY: Cek langkah saat ini dan langkah yang tersedia
+                logger.info("Mengecek status verifikasi...")
+                v_data, v_status = await self._sheerid_request(
+                    client, "GET", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}"
+                )
                 
-                # Payload untuk Military biasanya sedikit berbeda
-                # Perlu cek apakah endpointnya collectMilitaryPersonalInfo
-                step2_body = {
+                if v_status != 200:
+                    raise Exception(f"Gagal mengambil info verifikasi (404/Basi). Gunakan LINK FRESH.")
+
+                current_step = v_data.get("currentStep")
+                logger.info(f"Langkah saat ini: {current_step}")
+
+                # Jika sudah di tahap upload dokumen, kita bisa langsung upload
+                # Tapi biasanya kita mulai dari collectPersonalInfo
+                
+                # Nama endpoint dinamis berdasarkan currentStep
+                # ChatGPT Veteran biasanya: collectMilitaryPersonalInfo
+                step_endpoint = current_step
+                
+                # Payload data personal
+                step_body = {
                     "firstName": first_name,
                     "lastName": last_name,
                     "birthDate": birth_date,
                     "email": email,
-                    "phoneNumber": "", # Optional biasanya
                     "deviceFingerprintHash": self.device_fingerprint,
                     "locale": "en-US",
-                    
-                                    # Kolom khusus Military (SheerID API keys)
-                                    "militaryStatus": status,  # MILITARY_VETERAN_RETIREE
-                                    "militaryBranch": branch,  # ARMY
-                                    "dischargeDate": discharge_date, # YYYY-MM-DD                    
+                    "militaryStatus": military_status,
+                    "militaryBranch": branch,
+                    "dischargeDate": discharge_date,
                     "metadata": {
-                        "marketConsentValue": False,
-                        "refererUrl": f"{config.SHEERID_BASE_URL}/verify/{config.PROGRAM_ID}/?verificationId={self.verification_id}",
                         "verificationId": self.verification_id,
-                        "submissionOptIn": "By submitting the personal information above, I acknowledge..."
                     },
                 }
 
-                step2_data, step2_status = await self._sheerid_request(
+                # 3. Kirim Data Personal (Submit Form)
+                logger.info(f"Mengirim data ke langkah: {step_endpoint}...")
+                res_data, res_status = await self._sheerid_request(
                     client,
                     "POST",
-                    f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/collectMilitaryPersonalInfo",
-                    step2_body,
+                    f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/{step_endpoint}",
+                    step_body,
                 )
-                
-                # Handle error 400 (Invalid Step / Link Basi)
-                if step2_status == 400 and "invalidStep" in str(step2_data):
-                     raise Exception("Link tidak valid/sudah terpakai. Pastikan link FRESH (Formulir belum diisi).")
 
-                if step2_status != 200:
-                    raise Exception(f"Langkah 2 gagal (kode status {step2_status}): {step2_data}")
-                
-                if step2_data.get("currentStep") == "error":
-                    error_msg = ", ".join(step2_data.get("errorIds", ["Unknown error"]))
-                    raise Exception(f"Langkah 2 error: {error_msg}")
+                if res_status != 200:
+                    # Cek jika errornya karena step salah
+                    if res_status == 404:
+                         raise Exception(f"Langkah '{step_endpoint}' tidak ditemukan. SheerID mungkin mengubah strukturnya.")
+                    raise Exception(f"Submit data gagal ({res_status}): {res_data}")
 
-                logger.info(f"✅ Langkah 2 selesai: {step2_data.get('currentStep')}")
-                current_step = step2_data.get("currentStep", current_step)
+                current_step = res_data.get("currentStep")
+                logger.info(f"Langkah selanjutnya: {current_step}")
 
-                # 3. Handle SSO override (jarang di military tapi jaga-jaga)
+                # 4. Skip SSO jika muncul
                 if current_step == "sso":
-                    logger.info("Langkah 3: Skip SSO...")
-                    step3_data, _ = await self._sheerid_request(
-                        client, "DELETE", 
-                        f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/sso"
+                    logger.info("Melewati SSO...")
+                    res_data, _ = await self._sheerid_request(
+                        client, "DELETE", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/sso"
                     )
-                    current_step = step3_data.get("currentStep", current_step)
+                    current_step = res_data.get("currentStep")
 
-                # 4. Upload Dokumen
-                logger.info("Langkah 4/4: Upload dokumen...")
-                step4_body = {
-                    "files": [
-                        {"fileName": "dd214.png", "mimeType": "image/png", "fileSize": file_size}
-                    ]
-                }
-                step4_data, step4_status = await self._sheerid_request(
-                    client,
-                    "POST",
-                    f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/docUpload",
-                    step4_body,
-                )
-                
-                if not step4_data.get("documents"):
-                    raise Exception("Tidak bisa mendapatkan URL upload")
+                # 5. Generate & Upload Dokumen
+                if current_step == "docUpload":
+                    logger.info("Membuat dokumen DD-214...")
+                    img_data = await generate_military_png(first_name, last_name, birth_date, discharge_date, branch)
+                    
+                    logger.info("Meminta URL upload...")
+                    up_data, up_status = await self._sheerid_request(
+                        client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/docUpload",
+                        {"files": [{"fileName": "dd214.png", "mimeType": "image/png", "fileSize": len(img_data)}]}
+                    )
+                    
+                    if not up_data.get("documents"):
+                        raise Exception("Gagal mendapatkan URL upload dokumen.")
 
-                upload_url = step4_data["documents"][0]["uploadUrl"]
-                if not await self._upload_to_s3(client, upload_url, img_data):
-                    raise Exception("Upload S3 gagal")
-                
-                # Complete Upload
-                step6_data, _ = await self._sheerid_request(
-                    client,
-                    "POST",
-                    f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/completeDocUpload",
-                )
-                final_status = step6_data
+                    upload_url = up_data["documents"][0]["uploadUrl"]
+                    if await self._upload_to_s3(client, upload_url, img_data):
+                        logger.info("Upload dokumen berhasil.")
+                        # Selesaikan upload
+                        await self._sheerid_request(
+                            client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/completeDocUpload"
+                        )
+                    else:
+                        raise Exception("Gagal upload dokumen ke S3.")
 
             return {
                 "success": True,
                 "pending": True,
-                "message": "Dokumen DD-214 dikirim, menunggu review.",
-                "verification_id": self.verification_id,
-                "redirect_url": final_status.get("redirectUrl"),
-                "status": final_status,
+                "message": "Data & Dokumen DD-214 berhasil dikirim. Menunggu review.",
+                "verification_id": self.verification_id
             }
 
         except Exception as e:
