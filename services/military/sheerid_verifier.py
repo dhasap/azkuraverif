@@ -107,8 +107,8 @@ class SheerIDVerifier:
                         if res_status != 200:
                             raise Exception(f"Gagal set status ({res_status}): {res_data}")
 
-                    # C. Tahap Isi Data Personal
-                    elif current_step == "collectMilitaryPersonalInfo":
+                    # C. Tahap Isi Data Personal (Active / Inactive)
+                    elif current_step in ["collectMilitaryPersonalInfo", "collectInactiveMilitaryPersonalInfo", "collectActiveMilitaryPersonalInfo"]:
                         payload = {
                             "firstName": first_name,
                             "lastName": last_name,
@@ -120,7 +120,7 @@ class SheerIDVerifier:
                             "locale": "en-US"
                         }
                         res_data, res_status = await self._sheerid_request(
-                            client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/collectMilitaryPersonalInfo",
+                            client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/{current_step}",
                             payload
                         )
                         if res_status != 200:
