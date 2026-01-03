@@ -60,117 +60,222 @@ class SheerIDVerifier:
             logger.error(f"Upload S3 gagal: {e}")
             return False
 
-    async def verify(
-        self,
-        first_name: str = None,
-        last_name: str = None,
-        email: str = None,
-        birth_date: str = None,
-        branch: str = None,
-        discharge_date: str = None,
-        **kwargs
-    ) -> Dict:
-        try:
-            # 1. Persiapan Data
-            name_gen = NameGenerator.generate()
-            first_name = first_name or name_gen["first_name"]
-            last_name = last_name or name_gen["last_name"]
-            email = email or generate_email(first_name, last_name)
-            birth_date = birth_date or generate_birth_date()
-            discharge_date = discharge_date or generate_discharge_date()
-            
-            # Default branch 'Army' jika tidak ada
-            branch_key = branch or config.DEFAULT_BRANCH
-            # Dapatkan ID Organisasi resmi dari config
-            org_id = config.MILITARY_BRANCH_IDS.get(branch_key, 1259)
-            org_name = branch_key
-            
-            military_status = 'VETERAN'
+        async def _search_organization(self, client: httpx.AsyncClient, search_term: str) -> Dict:
 
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                # 2. Loop Langkah (Discovery Mode)
-                for _ in range(10):
-                    v_data, v_status = await self._sheerid_request(
-                        client, "GET", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}"
-                    )
-                    
-                    if v_status != 200:
-                        raise Exception("ID Verifikasi tidak ditemukan atau kadaluarsa.")
+            """Mencari Organisasi Militer dan mengembalikan objek lengkapnya"""
 
-                    current_step = v_data.get("currentStep")
-                    logger.info(f"Proses Langkah: {current_step}")
+            try:
 
-                    if current_step in ["success", "pending", "docReview"]:
-                        break
+                url = f"{config.SHEERID_BASE_URL}/rest/v2/organization/search"
 
-                    # A. Pilih Status (collectMilitaryStatus)
-                    if current_step == "collectMilitaryStatus":
-                        res_data, res_status = await self._sheerid_request(
-                            client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/collectMilitaryStatus",
-                            {"status": military_status}
+                # Type 'MILITARY' wajib untuk filter cabang militer
+
+                params = {'searchTerm': search_term, 'type': 'MILITARY'} 
+
+                
+
+                response = await client.get(url, params=params)
+
+                if response.status_code == 200:
+
+                    results = response.json()
+
+                    if results and isinstance(results, list) and len(results) > 0:
+
+                        # Kembalikan objek organisasi PERTAMA yang cocok
+
+                        # Objek ini berisi {id: ..., name: ..., type: 'MILITARY', ...}
+
+                        return results[0]
+
+                
+
+                # Jika tidak ketemu, coba cari tanpa filter type (fallback)
+
+                params.pop('type')
+
+                response = await client.get(url, params=params)
+
+                if response.status_code == 200:
+
+                    results = response.json()
+
+                    if results and len(results) > 0:
+
+                        return results[0]
+
+    
+
+                raise Exception(f"Organisasi '{search_term}' tidak ditemukan di database SheerID")
+
+            except Exception as e:
+
+                logger.error(f"Error search org: {e}")
+
+                raise
+
+    
+
+        async def verify(
+
+            self,
+
+            first_name: str = None,
+
+            last_name: str = None,
+
+            email: str = None,
+
+            birth_date: str = None,
+
+            branch: str = None,
+
+            discharge_date: str = None,
+
+            **kwargs
+
+        ) -> Dict:
+
+            try:
+
+                # 1. Persiapan Data
+
+                name_gen = NameGenerator.generate()
+
+                first_name = first_name or name_gen["first_name"]
+
+                last_name = last_name or name_gen["last_name"]
+
+                email = email or generate_email(first_name, last_name)
+
+                birth_date = birth_date or generate_birth_date()
+
+                discharge_date = discharge_date or generate_discharge_date()
+
+                
+
+                # Default branch 'Army'
+
+                branch_key = branch or config.DEFAULT_BRANCH
+
+                military_status = 'VETERAN'
+
+    
+
+                async with httpx.AsyncClient(timeout=30.0) as client:
+
+                    # 2. Loop Langkah
+
+                    for _ in range(10):
+
+                        v_data, v_status = await self._sheerid_request(
+
+                            client, "GET", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}"
+
                         )
-                        if res_status != 200:
-                            raise Exception(f"Gagal set status ({res_status}): {res_data}")
 
-                    # B. Isi Data Personal (Inactive / Active / Generic)
-                    elif current_step in ["collectMilitaryPersonalInfo", "collectInactiveMilitaryPersonalInfo", "collectActiveMilitaryPersonalInfo"]:
-                        payload = {
-                            "firstName": first_name,
-                            "lastName": last_name,
-                            "birthDate": birth_date,
-                            "email": email,
-                            "organization": {
-                                "id": org_id,
-                                "name": org_name
-                            },
-                            "status": military_status, # Sertakan status lagi sesuai error log 'expected one of'
-                            "dischargeDate": discharge_date,
-                            "deviceFingerprintHash": self.device_fingerprint,
-                            "locale": "en-US"
-                        }
-                        res_data, res_status = await self._sheerid_request(
-                            client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/{current_step}",
-                            payload
-                        )
-                        if res_status != 200:
-                            raise Exception(f"Gagal isi data diri ({res_status}): {res_data}")
-
-                    # C. Skip SSO
-                    elif current_step == "sso":
-                        await self._sheerid_request(
-                            client, "DELETE", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/sso"
-                        )
-
-                    # D. Upload Dokumen
-                    elif current_step == "docUpload":
-                        # Gunakan branch_key untuk generate dokumen yang sesuai
-                        img_data = await generate_military_png(first_name, last_name, birth_date, discharge_date, branch_key.upper().replace(' ', '_'))
                         
-                        up_res, _ = await self._sheerid_request(
-                            client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/docUpload",
-                            {"files": [{"fileName": "dd214.png", "mimeType": "image/png", "fileSize": len(img_data)}]}
-                        )
-                        
-                        if not up_res.get("documents"):
-                            raise Exception("Gagal mendapatkan URL upload.")
 
-                        upload_url = up_res["documents"][0]["uploadUrl"]
-                        if await self._upload_to_s3(client, upload_url, img_data):
+                        if v_status != 200:
+
+                            raise Exception("ID Verifikasi tidak ditemukan.")
+
+    
+
+                        current_step = v_data.get("currentStep")
+
+                        logger.info(f"Proses Langkah: {current_step}")
+
+    
+
+                        if current_step in ["success", "pending", "docReview"]:
+
+                            break
+
+    
+
+                        # A. Pilih Status
+
+                        if current_step == "collectMilitaryStatus":
+
                             await self._sheerid_request(
-                                client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/completeDocUpload"
+
+                                client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/collectMilitaryStatus",
+
+                                {"status": military_status}
+
                             )
-                        break
-                    
-                    else:
-                        logger.warning(f"Langkah tidak dikenal: {current_step}")
-                        break
 
-            return {
-                "success": True,
-                "message": "Data & Dokumen DD-214 berhasil dikirim.",
-                "verification_id": self.verification_id
-            }
+    
 
-        except Exception as e:
-            logger.error(f"❌ Verifikasi gagal: {e}")
-            return {"success": False, "message": str(e), "verification_id": self.verification_id}
+                        # B. Isi Data Personal (PENTING: Gunakan hasil search org)
+
+                        elif current_step in ["collectMilitaryPersonalInfo", "collectInactiveMilitaryPersonalInfo", "collectActiveMilitaryPersonalInfo"]:
+
+                            # 1. Cari Organisasi dulu!
+
+                            # Mapping nama branch user ke keyword pencarian yang pasti ada
+
+                            search_keyword = branch_key
+
+                            if "Army" in branch_key: search_keyword = "Army"
+
+                            elif "Navy" in branch_key: search_keyword = "Navy"
+
+                            elif "Air Force" in branch_key: search_keyword = "Air Force"
+
+                            elif "Marines" in branch_key: search_keyword = "Marine Corps"
+
+                            
+
+                            logger.info(f"Mencari organisasi: {search_keyword}...")
+
+                            org_object = await self._search_organization(client, search_keyword)
+
+                            logger.info(f"Organisasi Valid: {org_object['name']} (ID: {org_object['id']})")
+
+    
+
+                            payload = {
+
+                                "firstName": first_name,
+
+                                "lastName": last_name,
+
+                                "birthDate": birth_date,
+
+                                "email": email,
+
+                                "organization": org_object, # Kirim objek mentah hasil search!
+
+                                "status": military_status,
+
+                                "dischargeDate": discharge_date,
+
+                                "deviceFingerprintHash": self.device_fingerprint,
+
+                                "locale": "en-US"
+
+                            }
+
+                            
+
+                            res_data, res_status = await self._sheerid_request(
+
+                                client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/{current_step}",
+
+                                payload
+
+                            )
+
+                            if res_status != 200:
+
+                                raise Exception(f"Gagal isi data diri ({res_status}): {res_data}")
+
+    
+
+                        # C. Skip SSO
+
+                        # ... (kode bawah sama)
+
+    
