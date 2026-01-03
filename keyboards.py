@@ -40,7 +40,7 @@ def main_menu() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="📺 YouTube", callback_data="service_youtube"),
         ],
         [
-            InlineKeyboardButton(text="🎓 K12", callback_data="service_k12"),
+            InlineKeyboardButton(text="🧠 ChatGPT / Service", callback_data="service_chatgpt"),
             InlineKeyboardButton(text="☁️ One / Bolt", callback_data="service_one"),
         ],
         [
@@ -48,6 +48,7 @@ def main_menu() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="💳 Topup / Redeem", callback_data="menu_topup"),
         ],
         [
+            InlineKeyboardButton(text="💳 Topup / Redeem", callback_data="menu_topup"),
             InlineKeyboardButton(text="📅 Daily Check-in", callback_data="action_checkin"),
         ],
         [

@@ -7,10 +7,13 @@ libsql-experimental>=0.0.10
 # HTTP Client
 httpx>=0.27.0
 
-# Image Processing
+# Image Processing & PDF
 Pillow>=10.0.0
 reportlab>=4.0.0
 xhtml2pdf>=0.2.15
+
+# Browser Automation (PENTING untuk sistem baru)
+playwright>=1.40.0
 
 # System
 python-dotenv>=1.0.0

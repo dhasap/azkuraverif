@@ -1,4 +1,4 @@
-"""Program Utama Verifikasi Mahasiswa SheerID"""
+"""Program Utama Verifikasi Militer SheerID"""
 import re
 import random
 import logging
@@ -6,8 +6,8 @@ import httpx
 from typing import Dict, Optional, Tuple
 
 from . import config
-from .name_generator import NameGenerator, generate_email, generate_birth_date
-from .img_generator import generate_psu_email, generate_image
+from .name_generator import NameGenerator, generate_email, generate_birth_date, generate_discharge_date
+from .img_generator import generate_military_png
 
 # Konfigurasi logging
 logging.basicConfig(
@@ -17,15 +17,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 class SheerIDVerifier:
-    """Verifikator Identitas Mahasiswa SheerID (Async)"""
+    """Verifikator Identitas Militer SheerID (Async)"""
 
     def __init__(self, verification_id: str):
         self.verification_id = verification_id
         self.device_fingerprint = self._generate_device_fingerprint()
-        # Client tidak dibuat di init agar bisa menggunakan context manager atau dibuat saat verify
-        # Namun untuk kompatibilitas, kita akan buat saat dibutuhkan
 
     @staticmethod
     def _generate_device_fingerprint() -> str:
@@ -34,7 +31,6 @@ class SheerIDVerifier:
 
     @staticmethod
     def normalize_url(url: str) -> str:
-        """Normalisasi URL (tetap seperti asli)"""
         return url
 
     @staticmethod
@@ -47,15 +43,9 @@ class SheerIDVerifier:
     async def _sheerid_request(
         self, client: httpx.AsyncClient, method: str, url: str, body: Optional[Dict] = None
     ) -> Tuple[Dict, int]:
-        """Kirim request SheerID API (Async)"""
-        headers = {
-            "Content-Type": "application/json",
-        }
-
+        headers = {"Content-Type": "application/json"}
         try:
-            response = await client.request(
-                method=method, url=url, json=body, headers=headers
-            )
+            response = await client.request(method=method, url=url, json=body, headers=headers)
             try:
                 data = response.json()
             except Exception:
@@ -66,12 +56,9 @@ class SheerIDVerifier:
             raise
 
     async def _upload_to_s3(self, client: httpx.AsyncClient, upload_url: str, img_data: bytes) -> bool:
-        """Upload PNG ke S3 (Async)"""
         try:
             headers = {"Content-Type": "image/png"}
-            response = await client.put(
-                upload_url, content=img_data, headers=headers, timeout=60.0
-            )
+            response = await client.put(upload_url, content=img_data, headers=headers, timeout=60.0)
             return 200 <= response.status_code < 300
         except Exception as e:
             logger.error(f"Upload S3 gagal: {e}")
@@ -83,9 +70,10 @@ class SheerIDVerifier:
         last_name: str = None,
         email: str = None,
         birth_date: str = None,
-        school_id: str = None,
+        status: str = None,
+        branch: str = None,
+        discharge_date: str = None
     ) -> Dict:
-        """Menjalankan proses verifikasi (Async)"""
         try:
             current_step = "initial"
 
@@ -94,63 +82,68 @@ class SheerIDVerifier:
                 first_name = name["first_name"]
                 last_name = name["last_name"]
 
-            school_id = school_id or config.DEFAULT_SCHOOL_ID
-            school = config.SCHOOLS[school_id]
-
             if not email:
-                email = generate_psu_email(first_name, last_name)
+                email = generate_email(first_name, last_name)
             if not birth_date:
                 birth_date = generate_birth_date()
+            if not discharge_date:
+                discharge_date = generate_discharge_date()
+            
+            status = status or config.DEFAULT_STATUS
+            branch = branch or config.DEFAULT_BRANCH
 
-            logger.info(f"Informasi mahasiswa: {first_name} {last_name}")
-            logger.info(f"Email: {email}")
-            logger.info(f"Sekolah: {school['name']}")
-            logger.info(f"Tanggal lahir: {birth_date}")
+            logger.info(f"Informasi Militer: {first_name} {last_name}")
+            logger.info(f"Status: {status} | Branch: {branch}")
+            logger.info(f"Discharge: {discharge_date}")
             logger.info(f"ID Verifikasi: {self.verification_id}")
 
-            # Buat kartu mahasiswa PNG (Async)
-            logger.info("Langkah 1/4: Membuat kartu mahasiswa PNG...")
-            img_data = await generate_image(first_name, last_name, school_id)
+            # 1. Buat Dokumen DD-214
+            logger.info("Langkah 1/4: Membuat dokumen DD-214...")
+            img_data = await generate_military_png(first_name, last_name, birth_date, discharge_date, branch)
             file_size = len(img_data)
             logger.info(f"✅ Ukuran PNG: {file_size / 1024:.2f}KB")
 
             async with httpx.AsyncClient(timeout=30.0) as client:
-                # Kirim informasi mahasiswa
-                logger.info("Langkah 2/4: Mengirim informasi mahasiswa...")
+                # 2. Kirim Informasi Personal
+                logger.info("Langkah 2/4: Mengirim informasi militer...")
+                
+                # Payload untuk Military biasanya sedikit berbeda
+                # Perlu cek apakah endpointnya collectMilitaryPersonalInfo
                 step2_body = {
                     "firstName": first_name,
                     "lastName": last_name,
                     "birthDate": birth_date,
                     "email": email,
-                    "phoneNumber": "",
-                    "organization": {
-                        "id": int(school_id),
-                        "idExtended": school["idExtended"],
-                        "name": school["name"],
-                    },
+                    "phoneNumber": "", # Optional biasanya
                     "deviceFingerprintHash": self.device_fingerprint,
                     "locale": "en-US",
+                    
+                                    # Kolom khusus Military (SheerID API keys)
+                                    "militaryStatus": status,  # MILITARY_VETERAN_RETIREE
+                                    "militaryBranch": branch,  # ARMY
+                                    "dischargeDate": discharge_date, # YYYY-MM-DD                    
                     "metadata": {
                         "marketConsentValue": False,
                         "refererUrl": f"{config.SHEERID_BASE_URL}/verify/{config.PROGRAM_ID}/?verificationId={self.verification_id}",
                         "verificationId": self.verification_id,
-                        "flags": '{"collect-info-step-email-first":"default","doc-upload-considerations":"default","doc-upload-may24":"default","doc-upload-redesign-use-legacy-message-keys":false,"docUpload-assertion-checklist":"default","font-size":"default","include-cvec-field-france-student":"not-labeled-optional"}',
-                        "submissionOptIn": "By submitting the personal information above, I acknowledge that my personal information is being collected under the privacy policy of the business from which I am seeking a discount",
+                        "submissionOptIn": "By submitting the personal information above, I acknowledge..."
                     },
                 }
 
                 step2_data, step2_status = await self._sheerid_request(
                     client,
                     "POST",
-                    f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/collectStudentPersonalInfo",
+                    f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/collectMilitaryPersonalInfo",
                     step2_body,
                 )
-
+                
+                # Handle error 400 (Invalid Step / Link Basi)
                 if step2_status == 400 and "invalidStep" in str(step2_data):
-                    raise Exception("Link tidak valid/sudah terpakai. Pastikan Anda menyalin link SAAT FORMULIR MASIH KOSONG.")
+                     raise Exception("Link tidak valid/sudah terpakai. Pastikan link FRESH (Formulir belum diisi).")
 
                 if step2_status != 200:
                     raise Exception(f"Langkah 2 gagal (kode status {step2_status}): {step2_data}")
+                
                 if step2_data.get("currentStep") == "error":
                     error_msg = ", ".join(step2_data.get("errorIds", ["Unknown error"]))
                     raise Exception(f"Langkah 2 error: {error_msg}")
@@ -158,22 +151,20 @@ class SheerIDVerifier:
                 logger.info(f"✅ Langkah 2 selesai: {step2_data.get('currentStep')}")
                 current_step = step2_data.get("currentStep", current_step)
 
-                # Lewati SSO (jika diperlukan)
-                if current_step in ["sso", "collectStudentPersonalInfo"]:
-                    logger.info("Langkah 3/4: Melewati verifikasi SSO...")
+                # 3. Handle SSO override (jarang di military tapi jaga-jaga)
+                if current_step == "sso":
+                    logger.info("Langkah 3: Skip SSO...")
                     step3_data, _ = await self._sheerid_request(
-                        client,
-                        "DELETE",
-                        f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/sso",
+                        client, "DELETE", 
+                        f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/sso"
                     )
-                    logger.info(f"✅ Langkah 3 selesai: {step3_data.get('currentStep')}")
                     current_step = step3_data.get("currentStep", current_step)
 
-                # Upload dokumen dan selesaikan pengiriman
-                logger.info("Langkah 4/4: Request dan upload dokumen...")
+                # 4. Upload Dokumen
+                logger.info("Langkah 4/4: Upload dokumen...")
                 step4_body = {
                     "files": [
-                        {"fileName": "student_card.png", "mimeType": "image/png", "fileSize": file_size}
+                        {"fileName": "dd214.png", "mimeType": "image/png", "fileSize": file_size}
                     ]
                 }
                 step4_data, step4_status = await self._sheerid_request(
@@ -182,28 +173,26 @@ class SheerIDVerifier:
                     f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/docUpload",
                     step4_body,
                 )
+                
                 if not step4_data.get("documents"):
                     raise Exception("Tidak bisa mendapatkan URL upload")
 
                 upload_url = step4_data["documents"][0]["uploadUrl"]
-                logger.info("✅ Berhasil mendapat URL upload")
                 if not await self._upload_to_s3(client, upload_url, img_data):
                     raise Exception("Upload S3 gagal")
-                logger.info("✅ Kartu mahasiswa berhasil diupload")
-
+                
+                # Complete Upload
                 step6_data, _ = await self._sheerid_request(
                     client,
                     "POST",
                     f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/completeDocUpload",
                 )
-                logger.info(f"✅ Dokumen selesai dikirim: {step6_data.get('currentStep')}")
                 final_status = step6_data
 
-            # Tidak lakukan polling status, langsung return menunggu review
             return {
                 "success": True,
                 "pending": True,
-                "message": "Dokumen sudah dikirim, menunggu review",
+                "message": "Dokumen DD-214 dikirim, menunggu review.",
                 "verification_id": self.verification_id,
                 "redirect_url": final_status.get("redirectUrl"),
                 "status": final_status,
@@ -212,53 +201,3 @@ class SheerIDVerifier:
         except Exception as e:
             logger.error(f"❌ Verifikasi gagal: {e}")
             return {"success": False, "message": str(e), "verification_id": self.verification_id}
-
-
-async def main():
-    """Fungsi utama - Interface command line"""
-    import sys
-
-    print("=" * 60)
-    print("Tool Verifikasi Identitas Mahasiswa SheerID (Versi Python Async)")
-    print("=" * 60)
-    print()
-
-    if len(sys.argv) > 1:
-        url = sys.argv[1]
-    else:
-        # Note: input() is blocking, for test ok, but in production use args
-        print("Masukkan URL sebagai argumen saat menjalankan skrip.")
-        return 1
-
-    verification_id = SheerIDVerifier.parse_verification_id(url)
-    if not verification_id:
-        print("❌ Error: Format ID verifikasi tidak valid")
-        return 1
-
-    print(f"✅ Berhasil parse ID verifikasi: {verification_id}")
-    print()
-
-    verifier = SheerIDVerifier(verification_id)
-    result = await verifier.verify()
-
-    print()
-    print("=" * 60)
-    print("Hasil Verifikasi:")
-    print("=" * 60)
-    print(f"Status: {'✅ Berhasil' if result['success'] else '❌ Gagal'}")
-    print(f"Pesan: {result['message']}")
-    if result.get("redirect_url"):
-        print(f"Redirect URL: {result['redirect_url']}")
-    print("=" * 60)
-
-    return 0 if result["success"] else 1
-
-
-if __name__ == "__main__":
-    import asyncio
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        sys.exit(loop.run_until_complete(main()))
-    finally:
-        loop.close()

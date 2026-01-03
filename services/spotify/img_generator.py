@@ -35,7 +35,22 @@ def generate_html(first_name, last_name, school_id='2565'):
     """
     psu_id = generate_psu_id()
     name = f"{first_name} {last_name}"
-    date = datetime.now().strftime('%m/%d/%Y, %I:%M:%S %p')
+    
+    # Waktu dinamis
+    now = datetime.now()
+    date_str = now.strftime('%B %d, %Y')
+    time_str = now.strftime('%I:%M:%S %p')
+    
+    # Logika Semester Otomatis
+    if 1 <= now.month <= 5:
+        current_term = f"Spring {now.year}"
+        term_dates = "Jan 12 - May 08"
+    elif 6 <= now.month <= 7:
+        current_term = f"Summer {now.year}"
+        term_dates = "May 15 - Aug 10"
+    else:
+        current_term = f"Fall {now.year}"
+        term_dates = "Aug 25 - Dec 18"
 
     # Pilih jurusan secara acak
     majors = [
@@ -66,7 +81,7 @@ def generate_html(first_name, last_name, school_id='2565'):
 
         body {{
             font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background-color: #e0e0e0; /* Background browser */
+            background-color: #e0e0e0;
             margin: 0;
             padding: 20px;
             color: var(--text-color);
@@ -74,7 +89,6 @@ def generate_html(first_name, last_name, school_id='2565'):
             justify-content: center;
         }}
 
-        /* Simulasi jendela browser */
         .viewport {{
             width: 100%;
             max-width: 1100px;
@@ -85,37 +99,44 @@ def generate_html(first_name, last_name, school_id='2565'):
             flex-direction: column;
         }}
 
-        /* Bar navigasi atas LionPATH */
         .header {{
             background-color: var(--psu-blue);
             color: white;
-            padding: 0 20px;
-            height: 60px;
+            padding: 15px 25px;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }}
 
-        .brand {{
+        .brand-container {{
             display: flex;
-            align-items: center;
-            gap: 15px;
+            flex-direction: column;
         }}
 
-        /* Simulasi PSU Logo */
-        .psu-logo {{
+        .psu-logo-text {{
             font-family: "Georgia", serif;
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }}
+        
+        .psu-sub-text {{
+            font-size: 11px;
+            text-transform: uppercase;
             letter-spacing: 1px;
-            border-right: 1px solid rgba(255,255,255,0.3);
-            padding-right: 15px;
+            opacity: 0.9;
         }}
 
         .system-name {{
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 300;
+            border-left: 1px solid rgba(255,255,255,0.4);
+            padding-left: 15px;
+            margin-left: 15px;
         }}
+
+        .header-left {{ display: flex; align-items: center; }}
 
         .user-menu {{
             font-size: 14px;
@@ -127,102 +148,126 @@ def generate_html(first_name, last_name, school_id='2565'):
         .nav-bar {{
             background-color: #f8f8f8;
             border-bottom: 1px solid #ddd;
-            padding: 10px 20px;
-            font-size: 13px;
-            color: #666;
+            padding: 12px 25px;
+            font-size: 14px;
+            color: #555;
             display: flex;
-            gap: 20px;
+            gap: 30px;
+            font-weight: 500;
         }}
         .nav-item {{ cursor: pointer; }}
-        .nav-item.active {{ color: var(--psu-blue); font-weight: bold; border-bottom: 2px solid var(--psu-blue); padding-bottom: 8px; }}
+        .nav-item.active {{ color: var(--psu-blue); font-weight: bold; border-bottom: 3px solid var(--psu-blue); padding-bottom: 5px; }}
 
-        /* 主内容区 */
         .content {{
-            padding: 30px;
+            padding: 40px;
             flex: 1;
         }}
 
         .page-header {{
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
         }}
 
         .page-title {{
-            font-size: 24px;
+            font-size: 28px;
             color: var(--psu-blue);
             margin: 0;
+            font-weight: 400;
         }}
 
         .term-selector {{
             background: #fff;
             border: 1px solid #ccc;
-            padding: 5px 10px;
+            padding: 8px 15px;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 15px;
             color: #333;
-            font-weight: bold;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }}
 
-        /* Kartu informasi mahasiswa */
         .student-card {{
-            background: #fcfcfc;
-            border: 1px solid #e0e0e0;
-            padding: 15px;
-            margin-bottom: 25px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-top: 4px solid var(--psu-blue);
+            padding: 20px;
+            margin-bottom: 30px;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
-            font-size: 13px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
         }}
-        .info-label {{ color: #777; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; }}
-        .info-val {{ font-weight: bold; color: #333; font-size: 14px; }}
+        .info-group {{ display: flex; flex-direction: column; }}
+        .info-label {{ color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 6px; font-weight: 600; letter-spacing: 0.5px; }}
+        .info-val {{ font-weight: bold; color: #222; font-size: 16px; }}
+        
         .status-badge {{
-            background-color: #e6fffa; color: #007a5e;
-            padding: 4px 8px; border-radius: 4px; font-weight: bold; border: 1px solid #b2f5ea;
+            display: inline-block;
+            background-color: #e6fffa; 
+            color: #007a5e;
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-weight: bold; 
+            border: 1px solid #b2f5ea;
+            font-size: 14px;
+            text-align: center;
+            width: fit-content;
         }}
 
-        /* Tabel jadwal kuliah */
+        .data-timestamp {{
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #555;
+            text-align: right;
+            font-family: monospace;
+            background: #f9f9f9;
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            float: right;
+            border: 1px solid #eee;
+        }}
+
         .schedule-table {{
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 14px;
+            clear: both;
         }}
 
         .schedule-table th {{
             text-align: left;
-            padding: 12px;
-            background-color: #f0f0f0;
+            padding: 15px;
+            background-color: #f4f6f9;
             border-bottom: 2px solid #ccc;
-            color: #555;
+            color: #444;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 12px;
         }}
 
         .schedule-table td {{
-            padding: 15px 12px;
+            padding: 18px 15px;
             border-bottom: 1px solid #eee;
+            vertical-align: top;
         }}
 
-        .course-code {{ font-weight: bold; color: var(--psu-blue); }}
-        .course-title {{ font-weight: 500; }}
-
-        /* Adaptasi cetak */
-        @media print {{
-            body {{ background: white; padding: 0; }}
-            .viewport {{ box-shadow: none; max-width: 100%; min-height: auto; }}
-            .nav-bar {{ display: none; }}
-            @page {{ margin: 1cm; size: landscape; }}
-        }}
+        .course-code {{ font-weight: bold; color: var(--psu-blue); font-size: 15px; }}
+        .course-title {{ font-weight: 500; font-size: 15px; }}
     </style>
 </head>
 <body>
 
 <div class="viewport">
     <div class="header">
-        <div class="brand">
-            <div class="psu-logo">PennState</div>
+        <div class="header-left">
+            <div class="brand-container">
+                <div class="psu-logo-text">PennState</div>
+                <div class="psu-sub-text">The Pennsylvania State University</div>
+            </div>
             <div class="system-name">LionPATH</div>
         </div>
         <div class="user-menu">
@@ -244,31 +289,31 @@ def generate_html(first_name, last_name, school_id='2565'):
         <div class="page-header">
             <h1 class="page-title">My Class Schedule</h1>
             <div class="term-selector">
-                Term: <strong>Fall 2025</strong> (Aug 25 - Dec 12)
+                Current Term: <strong>{current_term}</strong> ({term_dates})
             </div>
         </div>
 
         <div class="student-card">
-            <div>
+            <div class="info-group">
                 <div class="info-label">Student Name</div>
                 <div class="info-val">{name}</div>
             </div>
-            <div>
-                <div class="info-label">PSU ID</div>
+            <div class="info-group">
+                <div class="info-label">PSU ID Number</div>
                 <div class="info-val">{psu_id}</div>
             </div>
-            <div>
+            <div class="info-group">
                 <div class="info-label">Academic Program</div>
                 <div class="info-val">{major}</div>
             </div>
-            <div>
+            <div class="info-group">
                 <div class="info-label">Enrollment Status</div>
-                <div class="status-badge">✅ Enrolled</div>
+                <div class="status-badge">✅ Active Student</div>
             </div>
         </div>
 
-        <div style="margin-bottom: 10px; font-size: 12px; color: #666; text-align: right;">
-            Data retrieved: <span>{date}</span>
+        <div class="data-timestamp">
+            Date Retrieved: <strong>{date_str}</strong> at {time_str}
         </div>
 
         <table class="schedule-table">
@@ -278,8 +323,8 @@ def generate_html(first_name, last_name, school_id='2565'):
                     <th width="15%">Course</th>
                     <th width="35%">Title</th>
                     <th width="20%">Days & Times</th>
-                    <th width="10%">Room</th>
-                    <th width="10%">Units</th>
+                    <th width="10%">Location</th>
+                    <th width="10%">Credits</th>
                 </tr>
             </thead>
             <tbody>
@@ -326,8 +371,8 @@ def generate_html(first_name, last_name, school_id='2565'):
             </tbody>
         </table>
 
-        <div style="margin-top: 50px; border-top: 1px solid #ddd; padding-top: 10px; font-size: 11px; color: #888; text-align: center;">
-            &copy; 2025 The Pennsylvania State University. All rights reserved.<br>
+        <div style="margin-top: 60px; border-top: 1px solid #ddd; padding-top: 15px; font-size: 11px; color: #888; text-align: center;">
+            &copy; {now.year} The Pennsylvania State University. All rights reserved.<br>
             LionPATH is the student information system for Penn State.
         </div>
     </div>
@@ -360,7 +405,6 @@ async def generate_image(first_name, last_name, school_id='2565'):
 
         # Gunakan Playwright untuk screenshot (Async)
         async with async_playwright() as p:
-            # Gunakan args untuk sandbox jika running as root/container
             browser = await p.chromium.launch(
                 headless=True,
                 args=['--no-sandbox', '--disable-setuid-sandbox']
@@ -380,32 +424,33 @@ async def generate_image(first_name, last_name, school_id='2565'):
 
 
 if __name__ == '__main__':
-    # Kode testing
+    # 测试代码
     import sys
     import io
 
-    # Perbaiki masalah encoding console Windows
+    # 修复 Windows 控制台编码问题
     if sys.platform == 'win32':
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-    print("Testing pembuatan gambar PSU...")
+    print("测试 PSU 图片生成...")
 
     first_name = "John"
     last_name = "Smith"
 
-    print(f"Nama: {first_name} {last_name}")
+    print(f"姓名: {first_name} {last_name}")
     print(f"PSU ID: {generate_psu_id()}")
-    print(f"Email: {generate_psu_email(first_name, last_name)}")
+    print(f"邮箱: {generate_psu_email(first_name, last_name)}")
 
     try:
-        img_data = generate_image(first_name, last_name)
+        import asyncio
+        img_data = asyncio.run(generate_image(first_name, last_name))
 
-        # Simpan gambar test
+        # 保存测试图片
         with open('test_psu_card.png', 'wb') as f:
             f.write(img_data)
 
-        print(f"✓ Gambar berhasil dibuat! Ukuran: {len(img_data)} bytes")
-        print("✓ Tersimpan sebagai test_psu_card.png")
+        print(f"✓ 图片生成成功! 大小: {len(img_data)} bytes")
+        print("✓ 已保存为 test_psu_card.png")
 
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f"✗ 错误: {e}")

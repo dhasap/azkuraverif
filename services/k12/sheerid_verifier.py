@@ -186,6 +186,9 @@ class SheerIDVerifier:
                     step2_body
                 )
 
+                if step2_status == 400 and "invalidStep" in str(step2_data):
+                    raise Exception("Link tidak valid/sudah terpakai. Pastikan Anda menyalin link SAAT FORMULIR MASIH KOSONG.")
+
                 if step2_status != 200:
                     raise Exception(f"Langkah 2 gagal (kode status {step2_status}): {step2_data}")
 

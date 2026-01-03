@@ -1,0 +1,1 @@
+"""Gemini Military SheerID Verification Module"""
