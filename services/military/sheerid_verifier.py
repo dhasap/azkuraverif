@@ -109,12 +109,36 @@ class SheerIDVerifier:
 
                     # C. Tahap Isi Data Personal (Active / Inactive)
                     elif current_step in ["collectMilitaryPersonalInfo", "collectInactiveMilitaryPersonalInfo", "collectActiveMilitaryPersonalInfo"]:
+                        # Mapping Branch Code ke Nama yang bisa dibaca (Title Case) agar masuk ke Organization Name
+                        # Contoh: ARMY -> U.S. Army
+                        branch_name_map = {
+                            'AIR_FORCE': 'U.S. Air Force',
+                            'AIR_FORCE_RESERVE': 'U.S. Air Force Reserve',
+                            'AIR_NATIONAL_GUARD': 'Air National Guard',
+                            'ARMY': 'U.S. Army',
+                            'ARMY_NATIONAL_GUARD': 'Army National Guard',
+                            'ARMY_RESERVE': 'U.S. Army Reserve',
+                            'COAST_GUARD': 'U.S. Coast Guard',
+                            'COAST_GUARD_RESERVE': 'U.S. Coast Guard Reserve',
+                            'MARINES': 'U.S. Marine Corps',
+                            'MARINE_CORPS_RESERVE': 'U.S. Marine Corps Forces Reserve',
+                            'NAVY': 'U.S. Navy',
+                            'NAVY_RESERVE': 'U.S. Navy Reserve',
+                            'SPACE_FORCE': 'U.S. Space Force'
+                        }
+                        
+                        # Default fallback ke nilai config jika tidak ada di map
+                        org_name = branch_name_map.get(branch, branch)
+
                         payload = {
                             "firstName": first_name,
                             "lastName": last_name,
                             "birthDate": birth_date,
                             "email": email,
-                            "militaryBranch": branch,
+                            # Ganti militaryBranch dengan organization
+                            "organization": {
+                                "name": org_name
+                            },
                             "dischargeDate": discharge_date,
                             "deviceFingerprintHash": self.device_fingerprint,
                             "locale": "en-US"
