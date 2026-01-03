@@ -1,4 +1,4 @@
-"""Program Utama Verifikasi Militer SheerID - Multi-Step Logic"""
+"""Program Utama Verifikasi Militer SheerID - Final Logic based on HTML Inspection"""
 import re
 import random
 import logging
@@ -78,11 +78,17 @@ class SheerIDVerifier:
             email = email or generate_email(first_name, last_name)
             birth_date = birth_date or generate_birth_date()
             discharge_date = discharge_date or generate_discharge_date()
-            branch = branch or config.DEFAULT_BRANCH
+            
+            # Default branch 'Army' jika tidak ada
+            branch_key = branch or config.DEFAULT_BRANCH
+            # Dapatkan ID Organisasi resmi dari config
+            org_id = config.MILITARY_BRANCH_IDS.get(branch_key, 1259)
+            org_name = branch_key
+            
             military_status = 'VETERAN'
 
             async with httpx.AsyncClient(timeout=30.0) as client:
-                # 2. Loop Langkah (Max 10 steps to prevent infinite loop)
+                # 2. Loop Langkah (Discovery Mode)
                 for _ in range(10):
                     v_data, v_status = await self._sheerid_request(
                         client, "GET", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}"
@@ -94,11 +100,10 @@ class SheerIDVerifier:
                     current_step = v_data.get("currentStep")
                     logger.info(f"Proses Langkah: {current_step}")
 
-                    # A. Selesai
                     if current_step in ["success", "pending", "docReview"]:
                         break
 
-                    # B. Tahap Pilih Status (Hanya kirim 'status')
+                    # A. Pilih Status (collectMilitaryStatus)
                     if current_step == "collectMilitaryStatus":
                         res_data, res_status = await self._sheerid_request(
                             client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/collectMilitaryStatus",
@@ -107,38 +112,18 @@ class SheerIDVerifier:
                         if res_status != 200:
                             raise Exception(f"Gagal set status ({res_status}): {res_data}")
 
-                    # C. Tahap Isi Data Personal (Active / Inactive)
+                    # B. Isi Data Personal (Inactive / Active / Generic)
                     elif current_step in ["collectMilitaryPersonalInfo", "collectInactiveMilitaryPersonalInfo", "collectActiveMilitaryPersonalInfo"]:
-                        # Mapping Branch Code ke Nama yang bisa dibaca (Title Case) agar masuk ke Organization Name
-                        # Contoh: ARMY -> U.S. Army
-                        branch_name_map = {
-                            'AIR_FORCE': 'U.S. Air Force',
-                            'AIR_FORCE_RESERVE': 'U.S. Air Force Reserve',
-                            'AIR_NATIONAL_GUARD': 'Air National Guard',
-                            'ARMY': 'U.S. Army',
-                            'ARMY_NATIONAL_GUARD': 'Army National Guard',
-                            'ARMY_RESERVE': 'U.S. Army Reserve',
-                            'COAST_GUARD': 'U.S. Coast Guard',
-                            'COAST_GUARD_RESERVE': 'U.S. Coast Guard Reserve',
-                            'MARINES': 'U.S. Marine Corps',
-                            'MARINE_CORPS_RESERVE': 'U.S. Marine Corps Forces Reserve',
-                            'NAVY': 'U.S. Navy',
-                            'NAVY_RESERVE': 'U.S. Navy Reserve',
-                            'SPACE_FORCE': 'U.S. Space Force'
-                        }
-                        
-                        # Default fallback ke nilai config jika tidak ada di map
-                        org_name = branch_name_map.get(branch, branch)
-
                         payload = {
                             "firstName": first_name,
                             "lastName": last_name,
                             "birthDate": birth_date,
                             "email": email,
-                            # Ganti militaryBranch dengan organization
                             "organization": {
+                                "id": org_id,
                                 "name": org_name
                             },
+                            "status": military_status, # Sertakan status lagi sesuai error log 'expected one of'
                             "dischargeDate": discharge_date,
                             "deviceFingerprintHash": self.device_fingerprint,
                             "locale": "en-US"
@@ -150,19 +135,25 @@ class SheerIDVerifier:
                         if res_status != 200:
                             raise Exception(f"Gagal isi data diri ({res_status}): {res_data}")
 
-                    # D. Tahap Skip SSO
+                    # C. Skip SSO
                     elif current_step == "sso":
                         await self._sheerid_request(
                             client, "DELETE", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/sso"
                         )
 
-                    # E. Tahap Upload Dokumen
+                    # D. Upload Dokumen
                     elif current_step == "docUpload":
-                        img_data = await generate_military_png(first_name, last_name, birth_date, discharge_date, branch)
+                        # Gunakan branch_key untuk generate dokumen yang sesuai
+                        img_data = await generate_military_png(first_name, last_name, birth_date, discharge_date, branch_key.upper().replace(' ', '_'))
+                        
                         up_res, _ = await self._sheerid_request(
                             client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/docUpload",
                             {"files": [{"fileName": "dd214.png", "mimeType": "image/png", "fileSize": len(img_data)}]}
                         )
+                        
+                        if not up_res.get("documents"):
+                            raise Exception("Gagal mendapatkan URL upload.")
+
                         upload_url = up_res["documents"][0]["uploadUrl"]
                         if await self._upload_to_s3(client, upload_url, img_data):
                             await self._sheerid_request(
