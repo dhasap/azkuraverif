@@ -79,7 +79,7 @@ class SheerIDVerifier:
             birth_date = birth_date or generate_birth_date()
             discharge_date = discharge_date or generate_discharge_date()
             branch = branch or config.DEFAULT_BRANCH
-            military_status = 'MILITARY_VETERAN_RETIREE'
+            military_status = 'VETERAN'
 
             async with httpx.AsyncClient(timeout=30.0) as client:
                 # 2. Loop Langkah (Max 10 steps to prevent infinite loop)

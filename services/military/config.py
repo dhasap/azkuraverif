@@ -1,27 +1,33 @@
 # Konfigurasi Verifikasi Military SheerID
 
 # Konfigurasi SheerID API
-# Program ID bisa dinamis dari URL, tapi kita bisa set default jika ada
-PROGRAM_ID = '67c8c14f5f17a83b745e3f82' # Placeholder, usually parsed from URL
+PROGRAM_ID = '67c8c14f5f17a83b745e3f82' 
 SHEERID_BASE_URL = 'https://services.sheerid.com'
 MY_SHEERID_URL = 'https://my.sheerid.com'
 
-# Batas ukuran file
-MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB
+# Data Militer (Mapping sesuai Pilihan Web SheerID)
+MILITARY_STATUSES = {
+    'Active Duty': 'ACTIVE_DUTY',
+    'Military Veteran or Retiree': 'VETERAN',
+    'Reservist or National Guard': 'RESERVIST'
+}
 
-# Data Militer (SheerID Internal Codes)
-MILITARY_STATUSES = [
-    'MILITARY_VETERAN_RETIREE', 
-    'ACTIVE_DUTY', 
-    'RESERVIST_NATIONAL_GUARD'
-]
+MILITARY_BRANCHES = {
+    'Air Force': 'AIR_FORCE',
+    'Air Force Reserve': 'AIR_FORCE_RESERVE',
+    'Air National Guard': 'AIR_NATIONAL_GUARD',
+    'Army': 'ARMY',
+    'Army National Guard': 'ARMY_NATIONAL_GUARD',
+    'Army Reserve': 'ARMY_RESERVE',
+    'Coast Guard': 'COAST_GUARD',
+    'Coast Guard Reserve': 'COAST_GUARD_RESERVE',
+    'Marine Corps': 'MARINES',
+    'Marine Corps Forces Reserve': 'MARINE_CORPS_RESERVE',
+    'Navy': 'NAVY',
+    'Navy Reserve': 'NAVY_RESERVE',
+    'Space Force': 'SPACE_FORCE'
+}
 
-MILITARY_BRANCHES = [
-    'ARMY', 'NAVY', 'AIR_FORCE', 'MARINES', 'COAST_GUARD', 'SPACE_FORCE',
-    'ARMY_NATIONAL_GUARD', 'AIR_NATIONAL_GUARD', 'ARMY_RESERVE', 'NAVY_RESERVE',
-    'AIR_FORCE_RESERVE', 'MARINE_CORPS_RESERVE', 'COAST_GUARD_RESERVE'
-]
-
-# Default (Veteran + Army paling umum & sukses)
-DEFAULT_STATUS = 'MILITARY_VETERAN_RETIREE'
+# Default untuk ChatGPT Veteran
+DEFAULT_STATUS = 'VETERAN'
 DEFAULT_BRANCH = 'ARMY'
