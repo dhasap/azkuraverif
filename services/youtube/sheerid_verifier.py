@@ -7,7 +7,7 @@ from typing import Dict, Optional, Tuple
 
 from . import config
 from .name_generator import NameGenerator, generate_birth_date
-from .img_generator import generate_image, generate_psu_email
+from .img_generator import generate_image
 
 # Konfigurasi logging
 logging.basicConfig(

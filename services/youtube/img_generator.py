@@ -29,6 +29,9 @@ def generate_school_email(first_name, last_name, school=None):
         
     return email
 
+def generate_psu_email(first_name, last_name):
+    return generate_school_email(first_name, last_name, config.SCHOOLS.get('2565'))
+
 def generate_html(first_name, last_name, email=None, school_id='2565'):
     """
     Membuat HTML Kartu Mahasiswa (Multi-School)
