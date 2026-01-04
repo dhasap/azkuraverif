@@ -3,6 +3,7 @@ Generates a professional employment verification letter instead of ID card.
 """
 import os
 import time
+import random
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 
@@ -83,3 +84,7 @@ def generate_images(first_name, last_name, school_name="Pennsylvania State Unive
     return [
         {"file_name": "employment_cert.png", "data": data}
     ]
+
+def generate_psu_email(first_name: str, last_name: str) -> str:
+    """Generates a random PSU email address."""
+    return f"{first_name[0].lower()}{last_name.lower()}{random.randint(100, 999)}@psu.edu"
