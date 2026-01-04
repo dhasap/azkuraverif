@@ -145,11 +145,18 @@ class SheerIDVerifier:
                 first_name = name["first_name"]
                 last_name = name["last_name"]
 
-            school_id = school_id or config.DEFAULT_SCHOOL_ID
-            school = config.SCHOOLS[school_id]
+            if not school_id:
+                school = config.get_random_school()
+                school_id = str(school['id'])
+            else:
+                school = config.SCHOOLS.get(school_id) or config.SCHOOLS[config.DEFAULT_SCHOOL_ID]
+                school_id = str(school['id'])
 
             if not email:
-                email = generate_psu_email(first_name, last_name)
+                # Import generate_school_email dynamically or from img_generator
+                from .img_generator import generate_school_email
+                email = generate_school_email(first_name, last_name, school)
+            
             if not birth_date:
                 birth_date = generate_birth_date()
 
@@ -178,7 +185,7 @@ class SheerIDVerifier:
                     "lastName": last_name,
                     "birthDate": birth_date,
                     "email": email,
-                    "phoneNumber": "", # Optional
+                    "phoneNumber": "",
                     "organization": {
                         "id": int(school_id),
                         "idExtended": school["idExtended"],
@@ -188,9 +195,10 @@ class SheerIDVerifier:
                     "locale": "en-US",
                     "metadata": {
                         "marketConsentValue": False,
-                        "refererUrl": self.original_url,
                         "verificationId": self.verification_id,
-                        "submissionOptIn": "By submitting..."
+                        "refererUrl": f"https://services.sheerid.com/verify/{config.PROGRAM_ID}/?verificationId={self.verification_id}",
+                        "flags": '{"collect-info-step-email-first":"default","doc-upload-considerations":"default","doc-upload-may24":"default","doc-upload-redesign-use-legacy-message-keys":false,"docUpload-assertion-checklist":"default","font-size":"default","include-cvec-field-france-student":"not-labeled-optional"}',
+                        "submissionOptIn": "By submitting the personal information above, I acknowledge that my personal information is being collected under the privacy policy of the business from which I am seeking a discount"
                     },
                 }
                 
