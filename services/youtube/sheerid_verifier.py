@@ -66,8 +66,10 @@ class SheerIDVerifier:
         }
         
         # Tambahkan externalUserId jika ada di URL (euid)
+        # API SheerID menolak externalUserId di root body saat init session
+        # Kita masukkan ke metadata agar tersimpan
         if self.external_user_id:
-            body["externalUserId"] = self.external_user_id
+            body["metadata"] = {"externalUserId": self.external_user_id}
 
         try:
             # Gunakan endpoint global services.sheerid.com
