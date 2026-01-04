@@ -16,5 +16,6 @@ xhtml2pdf>=0.2.15
 playwright>=1.40.0
 
 # System
-python-dotenv>=1.0.0httpx-socks
+python-dotenv>=1.0.0
+httpx-socks
 websocket-client
