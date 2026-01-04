@@ -22,6 +22,7 @@ router = Router()
 
 class VerifyState(StatesGroup):
     waiting_for_url = State()
+    waiting_for_email = State()
     confirm_process = State()
 
 # Mapping nama service ke Verifier Class & Config
@@ -180,8 +181,41 @@ async def process_url(message: types.Message, state: FSMContext):
             logger.error(f"Error reading veterans db: {e}")
             await message.answer("⚠️ Gagal membaca database. Menggunakan <b>DATA ACAK</b>.", parse_mode="HTML")
     
-    # Lanjut ke Konfirmasi
+    # Khusus YouTube: Tanya Email agar tersambung ke akun Google user
+    if service_key == 'youtube':
+        await state.set_state(VerifyState.waiting_for_email)
+        text = (
+            "📧 <b>KONFIRMASI EMAIL</b>\n"
+            "━━━━━━━━━━━━━━━━\n"
+            "Untuk YouTube Premium, Anda wajib menggunakan email yang sama dengan akun Google Anda.\n\n"
+            "👉 <b>Masukkan alamat email Google/YouTube Anda:</b>"
+        )
+        kb = types.InlineKeyboardMarkup(inline_keyboard=[
+            [types.InlineKeyboardButton(text="🎲 Gunakan Email Acak (.edu)", callback_data="skip_email")],
+            [types.InlineKeyboardButton(text="❌ Batal", callback_data="cancel_verify")]
+        ])
+        await message.answer(text, reply_markup=kb, parse_mode="HTML")
+        return
+
+    # Lanjut ke Konfirmasi (Layanan Lain)
     await proceed_to_confirm(message, state, service_key, verif_id)
+
+@router.callback_query(F.data == "skip_email", VerifyState.waiting_for_email)
+async def skip_email(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await proceed_to_confirm(callback.message, state, data['service'], data.get('verification_id'))
+    await callback.answer()
+
+@router.message(VerifyState.waiting_for_email)
+async def process_email(message: types.Message, state: FSMContext):
+    email = message.text.strip()
+    if "@" not in email or "." not in email:
+        await message.reply("❌ Format email tidak valid!")
+        return
+    
+    await state.update_data(user_email=email)
+    data = await state.get_data()
+    await proceed_to_confirm(message, state, data['service'], data.get('verification_id'))
 
 async def proceed_to_confirm(message, state, service_key, verif_id):
     """Helper untuk menampilkan konfirmasi akhir"""
@@ -203,11 +237,13 @@ async def proceed_to_confirm(message, state, service_key, verif_id):
         return
 
     id_display = verif_id if verif_id else "(Auto Detect)"
+    email_display = data.get('user_email', "Otomatis (.edu)")
     confirm_text = (
         f"📝 <b>KONFIRMASI PESANAN</b>\n"
         f"━━━━━━━━━━━━━━━━\n"
         f"📦 <b>Layanan:</b> {SERVICES[service_key]['name']}\n"
         f"💸 <b>Biaya:</b> {cost} Poin\n"
+        f"📧 <b>Email:</b> <code>{email_display}</code>\n"
         f"🆔 <b>ID:</b> <code>{id_display}</code>\n"
         f"━━━━━━━━━━━━━━━━\n\n"
         "Apakah data sudah benar? Proses tidak dapat dibatalkan setelah ini."
@@ -226,6 +262,7 @@ async def execute_verification(callback: types.CallbackQuery, state: FSMContext)
     service_key = data['service']
     verif_id = data.get('verification_id')
     original_url = data.get('original_url')
+    user_email = data.get('user_email')
     custom_inputs = data.get('custom_inputs', {}) 
     
     cost = SERVICES[service_key]['cost']
@@ -260,6 +297,9 @@ async def execute_verification(callback: types.CallbackQuery, state: FSMContext)
         
         # Kirim Proxy khusus Perplexity jika ada di config
         verify_kwargs = {**custom_inputs}
+        if user_email:
+            verify_kwargs["email"] = user_email
+            
         if service_key == "perplexity" and config.PERPLEXITY_PROXY:
             verify_kwargs["proxy"] = config.PERPLEXITY_PROXY
             
