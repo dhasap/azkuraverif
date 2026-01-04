@@ -4,9 +4,8 @@ import ssl
 from websocket import create_connection
 
 # Konfigurasi Akun
-# Try using the /ssh path which is common for these tunnels, or root if that fails.
-# Based on the error, root returned 400 HTML, so it might be a wrong path.
-WS_URL = "wss://nl.wstunnel.xyz/ssh" 
+# Mencoba kembali ke root path tapi dengan slash eksplisit
+WS_URL = "wss://nl.wstunnel.xyz/" 
 HOST = "nl.wstunnel.xyz"
 
 def pipe_stdin_to_ws(ws):
@@ -36,13 +35,11 @@ def pipe_ws_to_stdout(ws):
 if __name__ == "__main__":
     try:
         # Connect to WebSocket
+        # Kita hapus custom header Host manual, biarkan library yang atur otomatis
+        # kadang double header bikin error 400
         ws = create_connection(
             WS_URL, 
-            sslopt={"cert_reqs": ssl.CERT_NONE}, 
-            header={
-                "Host": HOST,
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            }
+            sslopt={"cert_reqs": ssl.CERT_NONE}
         )
         
         # Start Threads
