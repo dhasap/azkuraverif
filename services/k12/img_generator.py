@@ -1,84 +1,86 @@
-"""Pembuatan Dokumen Bukti Guru (PDF + PNG)"""
+"""K12 Teacher Badge Generator
+Replaces old HTML-based generator with Pillow for better performance and look
+"""
+import os
 import random
-from datetime import datetime
+import time
 from io import BytesIO
-from pathlib import Path
+from PIL import Image, ImageDraw, ImageFont
 
-from xhtml2pdf import pisa
-
-
-def _render_template(first_name: str, last_name: str) -> str:
-    """Baca template, ganti nama/nomor karyawan/tanggal, dan expand variabel CSS."""
-    full_name = f"{first_name} {last_name}"
-    employee_id = random.randint(1000000, 9999999)
-    current_date = datetime.now().strftime("%m/%d/%Y %I:%M %p")
-
-    template_path = Path(__file__).parent / "card-temp.html"
-    html = template_path.read_text(encoding="utf-8")
-
-    # Expand variabel CSS, kompatibel dengan xhtml2pdf
-    color_map = {
-        "var(--primary-blue)": "#0056b3",
-        "var(--border-gray)": "#dee2e6",
-        "var(--bg-gray)": "#f8f9fa",
-    }
-    for placeholder, color in color_map.items():
-        html = html.replace(placeholder, color)
-
-    # Ganti nama contoh / nomor karyawan / tanggal (template ada 2 tempat nama + span)
-    html = html.replace("Sarah J. Connor", full_name)
-    html = html.replace("E-9928104", f"E-{employee_id}")
-    html = html.replace('id="currentDate"></span>', f'id="currentDate">{current_date}</span>')
-
-    return html
-
-
-def generate_teacher_pdf(first_name: str, last_name: str) -> bytes:
-    """Membuat byte dokumen PDF bukti guru."""
-    html = _render_template(first_name, last_name)
-
-    output = BytesIO()
-    pisa_status = pisa.CreatePDF(html, dest=output, encoding="utf-8")
-    if pisa_status.err:
-        raise Exception("Gagal membuat PDF")
-
-    pdf_data = output.getvalue()
-    output.close()
-    return pdf_data
-
-
-async def generate_teacher_png(first_name: str, last_name: str) -> bytes:
-    """Membuat PNG menggunakan screenshot Playwright (Async)."""
+def generate_teacher_badge(first_name: str, last_name: str, school_name: str) -> bytes:
+    """Generate fake K12 teacher badge PNG"""
+    width, height = 500, 350
+    img = Image.new("RGB", (width, height), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    
+    # Load fonts (fallback to default if arial not found)
     try:
-        from playwright.async_api import async_playwright
-    except ImportError as exc:
-        raise RuntimeError(
-            "Perlu menginstal playwright, jalankan `pip install playwright` lalu `playwright install chromium`"
-        ) from exc
-
-    html = _render_template(first_name, last_name)
-
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            headless=True,
-            args=['--no-sandbox', '--disable-setuid-sandbox']
-        )
-        page = await browser.new_page(viewport={"width": 1200, "height": 1000})
-        await page.set_content(html, wait_until="load")
-        await page.wait_for_timeout(500)  # Biarkan style stabil
-        # Cari elemen .browser-mockup, jika tidak ketemu screenshot full page
-        try:
-            card = page.locator(".browser-mockup")
-            await card.wait_for(state="visible", timeout=3000)
-            png_bytes = await card.screenshot(type="png")
-        except Exception:
-            png_bytes = await page.screenshot(type="png", full_page=True)
+        # Try finding fonts in standard linux paths
+        font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        if not os.path.exists(font_path):
+            font_path = "arial.ttf" # Fallback
             
-        await browser.close()
+        title_font = ImageFont.truetype(font_path, 22)
+        text_font = ImageFont.truetype(font_path, 16)
+        small_font = ImageFont.truetype(font_path, 12)
+    except:
+        title_font = ImageFont.load_default()
+        text_font = ImageFont.load_default()
+        small_font = ImageFont.load_default()
+    
+    # Header bar (Forest Green for K12 vibe)
+    draw.rectangle([(0, 0), (width, 50)], fill=(34, 139, 34)) 
+    
+    # Title centered
+    title_text = "STAFF IDENTIFICATION"
+    # Basic centering logic since anchor='mm' might vary by Pillow version
+    text_bbox = draw.textbbox((0, 0), title_text, font=title_font)
+    text_width = text_bbox[2] - text_bbox[0]
+    draw.text(((width - text_width) / 2, 15), title_text, fill=(255, 255, 255), font=title_font)
+    
+    # School name centered
+    school_name = school_name[:40] # Truncate if too long
+    text_bbox = draw.textbbox((0, 0), school_name, font=text_font)
+    text_width = text_bbox[2] - text_bbox[0]
+    draw.text(((width - text_width) / 2, 75), school_name, fill=(34, 139, 34), font=text_font)
+    
+    # Photo placeholder
+    draw.rectangle([(25, 100), (125, 220)], outline=(200, 200, 200), width=2)
+    draw.text((55, 150), "PHOTO", fill=(200, 200, 200), font=text_font)
+    
+    # Teacher info
+    teacher_id = f"T{random.randint(10000, 99999)}"
+    info_y = 110
+    info_lines = [
+        f"Name: {first_name} {last_name}",
+        f"ID: {teacher_id}",
+        f"Position: Teacher",
+        f"Department: Education",
+        f"Status: Active"
+    ]
+    
+    for line in info_lines:
+        draw.text((145, info_y), line, fill=(51, 51, 51), font=text_font)
+        info_y += 22
+    
+    # Valid date
+    current_year = int(time.strftime("%Y"))
+    valid_text = f"Valid: {current_year}-{current_year+1} School Year"
+    draw.text((145, info_y + 10), valid_text, fill=(100, 100, 100), font=small_font)
+    
+    # Footer
+    draw.rectangle([(0, height-35), (width, height)], fill=(34, 139, 34))
+    
+    footer_text = "Property of School District"
+    text_bbox = draw.textbbox((0, 0), footer_text, font=small_font)
+    text_width = text_bbox[2] - text_bbox[0]
+    draw.text(((width - text_width) / 2, height-25), footer_text, fill=(255, 255, 255), font=small_font)
+    
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    return buffer.getvalue()
 
-    return png_bytes
-
-
-# Kompatibilitas pemanggilan lama: default buat PDF
+# Compatibility wrapper
 def generate_teacher_image(first_name: str, last_name: str) -> bytes:
-    return generate_teacher_pdf(first_name, last_name)
+    # Use a generic name if school not provided, though it should be
+    return generate_teacher_badge(first_name, last_name, "Thomas Jefferson High School")

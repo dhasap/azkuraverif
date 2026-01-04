@@ -1,114 +1,52 @@
-"""Generator Nama Acak"""
+"""Bolt.new Teacher Name & Data Generator
+Updated for teacher demographics (Age 25-55)
+"""
 import random
-
+from datetime import datetime
 
 class NameGenerator:
-    """Generator Nama Bahasa Inggris"""
+    """English Name Generator"""
     
-    ROOTS = {
-        'prefixes': ['Al', 'Bri', 'Car', 'Dan', 'El', 'Fer', 'Gar', 'Har', 'Jes', 'Kar', 
-                    'Lar', 'Mar', 'Nor', 'Par', 'Quin', 'Ros', 'Sar', 'Tar', 'Val', 'Wil'],
-        'middles': ['an', 'en', 'in', 'on', 'ar', 'er', 'or', 'ur', 'al', 'el', 
-                   'il', 'ol', 'am', 'em', 'im', 'om', 'ay', 'ey', 'oy', 'ian'],
-        'suffixes': ['ton', 'son', 'man', 'ley', 'field', 'ford', 'wood', 'stone', 'worth', 'berg',
-                    'stein', 'bach', 'heim', 'gard', 'land', 'wick', 'shire', 'dale', 'brook', 'ridge'],
-        'name_roots': ['Alex', 'Bern', 'Crist', 'Dav', 'Edw', 'Fred', 'Greg', 'Henr', 'Ivan', 'John',
-                      'Ken', 'Leon', 'Mich', 'Nick', 'Oliv', 'Paul', 'Rich', 'Step', 'Thom', 'Will'],
-        'name_endings': ['a', 'e', 'i', 'o', 'y', 'ie', 'ey', 'an', 'en', 'in', 
-                        'on', 'er', 'ar', 'or', 'el', 'al', 'iel', 'ael', 'ine', 'lyn']
-    }
+    # Using more mature/professional sounding names
+    FIRST_NAMES = [
+        "James", "John", "Robert", "Michael", "William", "David", "Richard", "Joseph",
+        "Thomas", "Christopher", "Charles", "Daniel", "Matthew", "Anthony", "Mark",
+        "Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Barbara", "Susan",
+        "Jessica", "Sarah", "Karen", "Lisa", "Nancy", "Betty", "Margaret", "Sandra"
+    ]
     
-    PATTERNS = {
-        'first_name': [
-            ['prefix', 'ending'],
-            ['name_root', 'ending'],
-            ['prefix', 'middle', 'ending'],
-            ['name_root', 'middle', 'ending']
-        ],
-        'last_name': [
-            ['prefix', 'suffix'],
-            ['name_root', 'suffix'],
-            ['prefix', 'middle', 'suffix'],
-            ['compound']
-        ]
-    }
-    
-    @classmethod
-    def _generate_component(cls, pattern):
-        """Membuat komponen nama berdasarkan pola"""
-        components = []
-        for part in pattern:
-            if part == 'prefix':
-                component = random.choice(cls.ROOTS['prefixes'])
-            elif part == 'middle':
-                component = random.choice(cls.ROOTS['middles'])
-            elif part == 'suffix':
-                component = random.choice(cls.ROOTS['suffixes'])
-            elif part == 'name_root':
-                component = random.choice(cls.ROOTS['name_roots'])
-            elif part == 'ending':
-                component = random.choice(cls.ROOTS['name_endings'])
-            elif part == 'compound':
-                part1 = random.choice(cls.ROOTS['prefixes'])
-                part2 = random.choice(cls.ROOTS['suffixes'])
-                component = part1 + part2
-            else:
-                component = ''
-            
-            components.append(component)
-        
-        return ''.join(components)
-    
-    @classmethod
-    def _format_name(cls, name):
-        """Format nama (huruf pertama kapital)"""
-        return name.capitalize()
+    LAST_NAMES = [
+        "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
+        "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson",
+        "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson",
+        "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson"
+    ]
     
     @classmethod
     def generate(cls):
-        """
-        Membuat nama bahasa Inggris acak
-        
-        Returns:
-            dict: Berisi first_name, last_name, full_name
-        """
-        first_name_pattern = random.choice(cls.PATTERNS['first_name'])
-        last_name_pattern = random.choice(cls.PATTERNS['last_name'])
-        
-        first_name = cls._generate_component(first_name_pattern)
-        last_name = cls._generate_component(last_name_pattern)
-        
+        first = random.choice(cls.FIRST_NAMES)
+        last = random.choice(cls.LAST_NAMES)
         return {
-            'first_name': cls._format_name(first_name),
-            'last_name': cls._format_name(last_name),
-            'full_name': f"{cls._format_name(first_name)} {cls._format_name(last_name)}"
+            'first_name': first,
+            'last_name': last,
+            'full_name': f"{first} {last}"
         }
 
-
-def generate_email(school_domain='MIT.EDU'):
-    """
-    Membuat email sekolah acak
-    
-    Args:
-        school_domain: Domain sekolah
-    
-    Returns:
-        str: Alamat email
-    """
-    chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    username = ''.join(random.choice(chars) for _ in range(8))
-    return f"{username}@{school_domain}"
-
+def generate_email(school_domain='psu.edu'):
+    """Generate professional university email"""
+    name = NameGenerator.generate()
+    first = name['first_name'][0].lower()
+    last = name['last_name'].lower()
+    num = random.randint(10, 99)
+    return f"{first}{last}{num}@{school_domain}"
 
 def generate_birth_date():
     """
-    Membuat tanggal lahir acak (tahun 2000-2005)
-    
-    Returns:
-        str: Tanggal format YYYY-MM-DD
+    Generate teacher age (25-55 years old)
+    Unlike students (18-24), teachers must be older.
     """
-    year = 2000 + random.randint(0, 5)
-    month = str(random.randint(1, 12)).zfill(2)
-    day = str(random.randint(1, 28)).zfill(2)
-    return f"{year}-{month}-{day}"
-
+    current_year = datetime.now().year
+    year = random.randint(current_year - 55, current_year - 25) # e.g., 1969 - 1999
+    month = random.randint(1, 12)
+    day = random.randint(1, 28)
+    return f"{year}-{month:02d}-{day:02d}"

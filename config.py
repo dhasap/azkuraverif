@@ -12,22 +12,29 @@ if not BOT_TOKEN:
 
 # Admin IDs (comma separated in .env)
 # Example: ADMIN_IDS=12345678,87654321
-ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
+ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "0").split(",") if x.strip().isdigit()]
+
+# --- Turso Database Configuration ---
+TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL")
+TURSO_AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN")
+
+# --- Proxy Configuration (For Perplexity) ---
+PERPLEXITY_PROXY = os.getenv("PERPLEXITY_PROXY", "")
 
 # --- Economy System ---
-VERIFY_COST = 1         # Cost per verification
+VERIFY_COST = 1         # Default cost per verification
 CHECKIN_REWARD = 1      # Daily check-in reward
 REFERRAL_REWARD = 2     # Reward for inviter
 REGISTER_REWARD = 3     # Initial balance for new users
 
-# --- Links & Text ---
-CHANNEL_URL = os.getenv("CHANNEL_URL", "https://t.me/channel_anda")
-SUPPORT_URL = os.getenv("SUPPORT_URL", "https://t.me/admin_anda")
+# --- Links & Support ---
+CHANNEL_URL = os.getenv("CHANNEL_URL", "https://t.me/azkuraairdrop")
+SUPPORT_URL = os.getenv("SUPPORT_URL", "https://t.me/dhasap1220")
 APP_NAME = "Azkura Verify Bot"
 
 # --- Force Subscribe ---
-FORCE_SUB_CHANNEL = "@azkuraairdrop" 
-FORCE_SUB_URL = "https://t.me/azkuraairdrop"
+FORCE_SUB_CHANNEL = os.getenv("FORCE_SUB_CHANNEL", "@azkuraairdrop") 
+FORCE_SUB_URL = CHANNEL_URL
 FORCE_SUB_MESSAGE = (
     "⛔️ <b>AKSES DIKUNCI</b>\n"
     "━━━━━━━━━━━━━━━━\n"

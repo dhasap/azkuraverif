@@ -75,3 +75,8 @@ Thumbs.db
 *.swp
 test_*.png
 test_*.pdf
+
+# Exclude source code reference folder
+@source-code/
+
+source-code/

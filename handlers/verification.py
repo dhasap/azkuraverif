@@ -16,6 +16,7 @@ from services.k12.sheerid_verifier import SheerIDVerifier as K12Verifier
 from services.one.sheerid_verifier import SheerIDVerifier as OneVerifier
 from services.Boltnew.sheerid_verifier import SheerIDVerifier as BoltVerifier
 from services.military.sheerid_verifier import SheerIDVerifier as MilitaryVerifier
+from services.perplexity.sheerid_verifier import SheerIDVerifier as PerplexityVerifier
 
 router = Router()
 
@@ -48,6 +49,11 @@ SERVICES = {
     "one": {
         "name": "OneDrive / Bolt",
         "verifier": OneVerifier, 
+        "cost": 2
+    },
+    "perplexity": {
+        "name": "Perplexity Pro (Student)",
+        "verifier": PerplexityVerifier,
         "cost": 2
     },
     "chatgpt": {
@@ -143,39 +149,35 @@ async def process_url(message: types.Message, state: FSMContext):
         
     await state.update_data(verification_id=verif_id, original_url=url)
 
-    # KHUSUS MILITARY: Ambil data valid otomatis dari database
+    # KHUSUS MILITARY: Coba ambil data valid, jika tidak ada gunakan Random Generator
     if service_key == 'military':
         try:
-            if not os.path.exists('data/veterans.json'):
-                await message.reply("❌ Error: Database veteran belum tersedia.", parse_mode="HTML")
-                await state.clear()
-                return
+            vets_file = 'data/veterans.json'
+            if os.path.exists(vets_file):
+                with open(vets_file, 'r') as f:
+                    vets = json.load(f)
                 
-            with open('data/veterans.json', 'r') as f:
-                vets = json.load(f)
-                
-            if not vets:
-                await message.reply("❌ Error: Database veteran kosong!", parse_mode="HTML")
-                await state.clear()
-                return
-            
-            # Pilih satu data valid secara acak
-            selected_vet = random.choice(vets)
-            await state.update_data(custom_inputs=selected_vet)
-            
-            formatted_info = (
-                f"🎖 <b>DATA VETERAN VALID TERPILIH:</b>\n"
-                f"👤 Nama: {selected_vet.get('first_name')} {selected_vet.get('last_name')}\n"
-                f"📅 Tgl Lahir: {selected_vet.get('birth_date')}\n"
-                f"⚔️ Branch: {selected_vet.get('branch')}\n"
-                f"📜 Discharge: {selected_vet.get('discharge_date')}\n"
-            )
-            await message.answer(f"✅ Link diterima.\n\n{formatted_info}", parse_mode="HTML")
+                if vets:
+                    # Pilih satu data valid secara acak
+                    selected_vet = random.choice(vets)
+                    await state.update_data(custom_inputs=selected_vet)
+                    
+                    formatted_info = (
+                        f"🎖 <b>DATA VETERAN VALID TERPILIH:</b>\n"
+                        f"👤 Nama: {selected_vet.get('first_name')} {selected_vet.get('last_name')}\n"
+                        f"📅 Tgl Lahir: {selected_vet.get('birth_date')}\n"
+                        f"⚔️ Branch: {selected_vet.get('branch')}\n"
+                        f"📜 Discharge: {selected_vet.get('discharge_date')}\n"
+                    )
+                    await message.answer(f"✅ Link diterima.\n\n{formatted_info}", parse_mode="HTML")
+                else:
+                     await message.answer("⚠️ Database veteran kosong. Menggunakan <b>DATA ACAK</b> (Peluang sukses lebih rendah).", parse_mode="HTML")
+            else:
+                await message.answer("⚠️ Database veteran tidak ditemukan. Menggunakan <b>DATA ACAK</b> (Peluang sukses lebih rendah).", parse_mode="HTML")
             
         except Exception as e:
-            await message.reply(f"❌ Gagal memproses database: {str(e)}", parse_mode="HTML")
-            await state.clear()
-            return
+            logger.error(f"Error reading veterans db: {e}")
+            await message.answer("⚠️ Gagal membaca database. Menggunakan <b>DATA ACAK</b>.", parse_mode="HTML")
     
     # Lanjut ke Konfirmasi
     await proceed_to_confirm(message, state, service_key, verif_id)
@@ -250,7 +252,12 @@ async def execute_verification(callback: types.CallbackQuery, state: FSMContext)
         else:
             verifier = VerifierClass(verif_id)
         
-        result = await verifier.verify(**custom_inputs)
+        # Kirim Proxy khusus Perplexity jika ada di config
+        verify_kwargs = {**custom_inputs}
+        if service_key == "perplexity" and config.PERPLEXITY_PROXY:
+            verify_kwargs["proxy"] = config.PERPLEXITY_PROXY
+            
+        result = await verifier.verify(**verify_kwargs)
         
         if result['success']:
             db.add_verification(user_id, service_key, "success", str(result))

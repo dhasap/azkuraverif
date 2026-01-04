@@ -1,15 +1,17 @@
-"""Program Utama Verifikasi Militer SheerID - Multi-Step with Search logic"""
+"""SheerID Military Verification Implementation
+Based on ChatGPT Military Blueprint
+"""
 import re
 import random
 import logging
 import httpx
+import json
 from typing import Dict, Optional, Tuple
 
 from . import config
 from .name_generator import NameGenerator, generate_email, generate_birth_date, generate_discharge_date
 from .img_generator import generate_military_png
 
-# Konfigurasi logging
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] [%(levelname)s] %(message)s',
@@ -18,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class SheerIDVerifier:
-    """Verifikator Identitas Militer SheerID (Async)"""
+    """SheerID Military Verifier"""
 
     def __init__(self, verification_id: str):
         self.verification_id = verification_id
@@ -39,7 +41,10 @@ class SheerIDVerifier:
     async def _sheerid_request(
         self, client: httpx.AsyncClient, method: str, url: str, body: Optional[Dict] = None
     ) -> Tuple[Dict, int]:
-        headers = {"Content-Type": "application/json"}
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
         try:
             response = await client.request(method=method, url=url, json=body, headers=headers)
             try:
@@ -48,7 +53,7 @@ class SheerIDVerifier:
                 data = response.text
             return data, response.status_code
         except Exception as e:
-            logger.error(f"Request SheerID gagal: {e}")
+            logger.error(f"SheerID Request Failed: {e}")
             raise
 
     async def _upload_to_s3(self, client: httpx.AsyncClient, upload_url: str, img_data: bytes) -> bool:
@@ -57,33 +62,8 @@ class SheerIDVerifier:
             response = await client.put(upload_url, content=img_data, headers=headers, timeout=60.0)
             return 200 <= response.status_code < 300
         except Exception as e:
-            logger.error(f"Upload S3 gagal: {e}")
+            logger.error(f"S3 Upload Failed: {e}")
             return False
-
-    async def _search_organization(self, client: httpx.AsyncClient, search_term: str) -> Dict:
-        """Mencari Organisasi Militer dan mengembalikan objek lengkapnya"""
-        try:
-            url = f"{config.SHEERID_BASE_URL}/rest/v2/organization/search"
-            params = {'searchTerm': search_term, 'type': 'MILITARY'} 
-            
-            response = await client.get(url, params=params)
-            if response.status_code == 200:
-                results = response.json()
-                if results and isinstance(results, list) and len(results) > 0:
-                    return results[0]
-            
-            # Fallback
-            params.pop('type', None)
-            response = await client.get(url, params=params)
-            if response.status_code == 200:
-                results = response.json()
-                if results and len(results) > 0:
-                    return results[0]
-
-            raise Exception(f"Organisasi '{search_term}' tidak ditemukan.")
-        except Exception as e:
-            logger.error(f"Error search org: {e}")
-            raise
 
     async def verify(
         self,
@@ -96,7 +76,7 @@ class SheerIDVerifier:
         **kwargs
     ) -> Dict:
         try:
-            # 1. Persiapan Data
+            # 1. Prepare Data
             name_gen = NameGenerator.generate()
             first_name = first_name or name_gen["first_name"]
             last_name = last_name or name_gen["last_name"]
@@ -104,97 +84,191 @@ class SheerIDVerifier:
             birth_date = birth_date or generate_birth_date()
             discharge_date = discharge_date or generate_discharge_date()
             
-            branch_key = branch or config.DEFAULT_BRANCH
-            military_status = 'VETERAN'
+            # Resolve Branch to Organization Object using Config
+            input_branch = branch or config.DEFAULT_BRANCH
+            # Normalize branch name using aliases
+            normalized_branch = config.BRANCH_ALIASES.get(input_branch.upper(), config.DEFAULT_BRANCH)
+            organization = config.ORGANIZATIONS.get(normalized_branch)
+            
+            if not organization:
+                # Fallback to Army if not found
+                organization = config.ORGANIZATIONS['Army']
+                normalized_branch = 'Army'
+
+            logger.info(f"Starting Military Verification for: {first_name} {last_name} ({normalized_branch})")
 
             async with httpx.AsyncClient(timeout=30.0) as client:
-                # 2. Loop Langkah
-                for _ in range(10):
+                # Loop to handle steps
+                for _ in range(15):
+                    # Get Current Status
                     v_data, v_status = await self._sheerid_request(
                         client, "GET", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}"
                     )
                     
                     if v_status != 200:
-                        raise Exception("ID Verifikasi tidak ditemukan atau kadaluarsa.")
+                        raise Exception("Verification ID not found or expired.")
 
                     current_step = v_data.get("currentStep")
-                    logger.info(f"Proses Langkah: {current_step}")
+                    logger.info(f"Current Step: {current_step}")
 
-                    if current_step in ["success", "pending", "docReview"]:
-                        break
+                    if current_step == "success":
+                        return {
+                            "success": True,
+                            "message": "Verification Successful!",
+                            "verification_id": self.verification_id,
+                            "redirect_url": v_data.get("redirectUrl"),
+                            "reward_code": v_data.get("rewardCode") or v_data.get("rewardData", {}).get("rewardCode")
+                        }
+                    
+                    if current_step == "pending" or current_step == "docReview":
+                         return {
+                            "success": True,
+                            "message": "Documents submitted. Pending review.",
+                            "verification_id": self.verification_id
+                        }
 
-                    # A. Pilih Status
+                    # --- IMPLEMENTATION OF BLUEPRINT STEPS ---
+
+                    # STEP 1: collectMilitaryStatus
                     if current_step == "collectMilitaryStatus":
+                        logger.info("Step 1: Setting Military Status to VETERAN")
+                        payload = {
+                            "status": "VETERAN"
+                        }
                         await self._sheerid_request(
-                            client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/collectMilitaryStatus",
-                            {"status": military_status}
+                            client, "POST", 
+                            f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/collectMilitaryStatus",
+                            payload
                         )
 
-                    # B. Isi Data Personal
-                    elif current_step in ["collectMilitaryPersonalInfo", "collectInactiveMilitaryPersonalInfo", "collectActiveMilitaryPersonalInfo"]:
-                        search_keyword = branch_key
-                        if "Army" in branch_key: search_keyword = "Army"
-                        elif "Navy" in branch_key: search_keyword = "Navy"
-                        elif "Air Force" in branch_key: search_keyword = "Air Force"
-                        elif "Marines" in branch_key: search_keyword = "Marine Corps"
+                    # STEP 2: collectInactiveMilitaryPersonalInfo
+                    elif current_step == "collectInactiveMilitaryPersonalInfo":
+                        logger.info("Step 2: Submitting Personal Info (Inactive/Veteran)")
                         
-                        logger.info(f"Mencari organisasi: {search_keyword}...")
-                        org_object = await self._search_organization(client, search_keyword)
+                        # Flags specific to ChatGPT/OpenAI program
+                        flags_json = json.dumps({
+                            "doc-upload-considerations": "default",
+                            "doc-upload-may24": "default",
+                            "doc-upload-redesign-use-legacy-message-keys": False,
+                            "docUpload-assertion-checklist": "default",
+                            "include-cvec-field-france-student": "not-labeled-optional",
+                            "org-search-overlay": "default",
+                            "org-selected-display": "default"
+                        })
+
+                        # Exact opt-in text from blueprint (Crucial for OpenAI)
+                        opt_in_text = (
+                            'By submitting the personal information above, I acknowledge that my personal information is being collected under the '
+                            '<a target="_blank" rel="noopener noreferrer" class="sid-privacy-policy sid-link" href="https://openai.com/policies/privacy-policy/">privacy policy</a> '
+                            'of the business from which I am seeking a discount, and I understand that my personal information will be shared with SheerID as a processor/third-party service provider '
+                            'in order for SheerID to confirm my eligibility for a special offer. Contact OpenAI Support for further assistance at support@openai.com'
+                        )
 
                         payload = {
                             "firstName": first_name,
                             "lastName": last_name,
                             "birthDate": birth_date,
                             "email": email,
-                            "organization": org_object,
-                            "status": military_status,
+                            "phoneNumber": "", # Optional per blueprint
+                            "organization": organization, # Using static ID from config (e.g. {id: 4070, name: "Army", ...})
                             "dischargeDate": discharge_date,
+                            "locale": "en-US",
+                            "country": "US",
                             "deviceFingerprintHash": self.device_fingerprint,
-                            "locale": "en-US"
+                            "metadata": {
+                                "marketConsentValue": False,
+                                "refererUrl": "",
+                                "verificationId": self.verification_id,
+                                "flags": flags_json,
+                                "submissionOptIn": opt_in_text
+                            }
                         }
                         
                         res_data, res_status = await self._sheerid_request(
-                            client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/{current_step}",
+                            client, "POST", 
+                            f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/collectInactiveMilitaryPersonalInfo",
                             payload
                         )
+                        
                         if res_status != 200:
-                            raise Exception(f"Gagal isi data diri ({res_status}): {res_data}")
+                            err_msg = str(res_data)
+                            if "errorIds" in res_data:
+                                err_msg = ", ".join(res_data["errorIds"])
+                            raise Exception(f"Step 2 Failed: {err_msg}")
 
-                    # C. Skip SSO
+                    # Fallback for Active Duty (Just in case logic shifts)
+                    elif current_step == "collectActiveMilitaryPersonalInfo":
+                         logger.warning("Unexpected step: collectActiveMilitaryPersonalInfo (We set status to VETERAN)")
+                         # Try submitting anyway with simplified metadata
+                         payload = {
+                            "firstName": first_name,
+                            "lastName": last_name,
+                            "birthDate": birth_date,
+                            "email": email,
+                            "organization": organization,
+                            "status": "ACTIVE_DUTY",
+                            "deviceFingerprintHash": self.device_fingerprint,
+                         }
+                         await self._sheerid_request(
+                            client, "POST", 
+                            f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/collectActiveMilitaryPersonalInfo",
+                            payload
+                        )
+
+                    # SSO Step (Skip)
                     elif current_step == "sso":
+                        logger.info("Skipping SSO...")
                         await self._sheerid_request(
                             client, "DELETE", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/sso"
                         )
 
-                    # D. Upload Dokumen
+                    # Document Upload Step
                     elif current_step == "docUpload":
-                        img_data = await generate_military_png(first_name, last_name, birth_date, discharge_date, branch_key.upper().replace(' ', '_'))
+                        logger.info("Generating and Uploading DD-214...")
                         
+                        # Generate DD-214 PNG
+                        img_data = await generate_military_png(
+                            first_name, last_name, birth_date, discharge_date, normalized_branch.upper().replace(' ', '_')
+                        )
+                        
+                        # Get Upload URL
                         up_res, _ = await self._sheerid_request(
                             client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/docUpload",
-                            {"files": [{"fileName": "dd214.png", "mimeType": "image/png", "fileSize": len(img_data)}]}
+                            {
+                                "files": [
+                                    {"fileName": "dd214.png", "mimeType": "image/png", "fileSize": len(img_data)}
+                                ]
+                            }
                         )
                         
                         if not up_res.get("documents"):
-                            raise Exception("Gagal mendapatkan URL upload dokumen.")
+                            raise Exception("Failed to get S3 upload URL.")
 
                         upload_url = up_res["documents"][0]["uploadUrl"]
+                        
+                        # Upload to S3
                         if await self._upload_to_s3(client, upload_url, img_data):
+                            logger.info("Upload successful, completing submission...")
                             await self._sheerid_request(
                                 client, "POST", f"{config.SHEERID_BASE_URL}/rest/v2/verification/{self.verification_id}/step/completeDocUpload"
                             )
-                        break
+                        else:
+                            raise Exception("Failed to upload document to S3.")
+                    
+                    elif current_step == "error":
+                        raise Exception(f"SheerID returned error state: {v_data.get('errorIds')}")
                     
                     else:
-                        logger.warning(f"Langkah tidak dikenal: {current_step}")
-                        break
+                        # Unknown step, wait a bit
+                        import asyncio
+                        await asyncio.sleep(2)
 
             return {
                 "success": True,
-                "message": "Data & Dokumen DD-214 berhasil dikirim. Menunggu review.",
+                "message": "Process completed successfully.",
                 "verification_id": self.verification_id
             }
 
         except Exception as e:
-            logger.error(f"❌ Verifikasi gagal: {e}")
+            logger.error(f"Verification Failed: {e}")
             return {"success": False, "message": str(e), "verification_id": self.verification_id}
