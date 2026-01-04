@@ -91,8 +91,11 @@ class SheerIDVerifier:
                 first_name = name["first_name"]
                 last_name = name["last_name"]
 
-            school_id = school_id or config.DEFAULT_SCHOOL_ID
-            school = config.SCHOOLS[school_id]
+            if not school_id:
+                school = config.get_random_school()
+                school_id = str(school['id'])
+            else:
+                school = config.SCHOOLS.get(school_id) or config.SCHOOLS[config.DEFAULT_SCHOOL_ID]
 
             if not email:
                 email = generate_psu_email(first_name, last_name)
