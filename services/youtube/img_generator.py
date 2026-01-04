@@ -1,20 +1,16 @@
 """Modul Pembuatan Kartu Mahasiswa PNG - Multi-University Support"""
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 import base64
 from . import config
-
-def generate_psu_id():
-    """Membuat PSU ID acak (9 digit angka)"""
-    return f"9{random.randint(10000000, 99999999)}"
 
 def generate_school_email(first_name, last_name, school=None):
     """
     Membuat email sekolah sesuai domain dengan pola dari referensi
     """
     if not school:
-        school = config.SCHOOLS['2565'] # Default PSU
+        school = config.SCHOOLS.get('2565') or {'domain': 'edu'}
         
     domain = school.get('domain', 'edu')
     
@@ -25,7 +21,7 @@ def generate_school_email(first_name, last_name, school=None):
         f"{last_name.lower()}{first_name[0].lower()}{random.randint(100, 999)}"
     ]
     
-    # Khusus domain tertentu (Opsional, pola di atas sudah umum)
+    # Khusus domain tertentu
     if 'psu.edu' in domain:
         email = f"{first_name.lower()}.{last_name.lower()}{random.randint(100, 9999)}@psu.edu"
     else:
@@ -33,15 +29,21 @@ def generate_school_email(first_name, last_name, school=None):
         
     return email
 
-def generate_psu_email(first_name, last_name):
-    return generate_school_email(first_name, last_name, config.SCHOOLS['2565'])
-
 def generate_html(first_name, last_name, email=None, school_id='2565'):
     """
     Membuat HTML Kartu Mahasiswa (Multi-School)
     """
     # 1. Setup Data
-    school = config.SCHOOLS.get(school_id, config.SCHOOLS['2565'])
+    school = config.SCHOOLS.get(school_id)
+    if not school:
+        # Fallback if school ID not found in SCHOOLS, try to use ID as is (for UI/Generic)
+        school = {'id': school_id, 'name': 'University', 'domain': 'edu'}
+        # But wait, config.SCHOOLS is populated from UNIVERSITIES in config.py
+        # However, generate_html is called with school_id.
+        # If school_id comes from UNIVERSITIES list, it should be in config.SCHOOLS if config.py mapped it correctly.
+    
+    school_name = school.get('name', 'University')
+    
     name = f"{first_name} {last_name}"
     display_email = email if email else generate_school_email(first_name, last_name, school)
     
@@ -49,14 +51,27 @@ def generate_html(first_name, last_name, email=None, school_id='2565'):
     date_str = now.strftime('%B %d, %Y')
     time_str = now.strftime('%I:%M:%S %p')
     
+    # Logic Term Dates
+    # Current date is used for verification "proof of enrollment for CURRENT period"
+    # So the term must cover NOW.
+    
+    year = now.year
     if 1 <= now.month <= 5:
-        current_term = f"Spring {now.year}"
+        current_term = f"Spring {year}"
+        term_start = datetime(year, 1, 15)
+        term_end = datetime(year, 5, 20)
     elif 6 <= now.month <= 8:
-        current_term = f"Summer {now.year}"
+        current_term = f"Summer {year}"
+        term_start = datetime(year, 6, 1)
+        term_end = datetime(year, 8, 20)
     else:
-        current_term = f"Fall {now.year}"
+        current_term = f"Fall {year}"
+        term_start = datetime(year, 8, 25)
+        term_end = datetime(year, 12, 18)
+        
+    term_dates_str = f"{term_start.strftime('%b %d')} - {term_end.strftime('%b %d, %Y')}"
 
-    majors = ['Computer Science', 'Business', 'Psychology', 'Engineering', 'Biology']
+    majors = ['Computer Science', 'Business Administration', 'Psychology', 'Mechanical Engineering', 'Biology']
     major = random.choice(majors)
     
     # 2. Select Template
@@ -165,11 +180,10 @@ def generate_html(first_name, last_name, email=None, school_id='2565'):
 </body>
 </html>"""
 
-    # --- PSU (Default) ---
-    psu_id = f"9{random.randint(10000000, 99999999)}"
-    term_dates = "Jan - May" if "Spring" in current_term else ("May - Aug" if "Summer" in current_term else "Aug - Dec")
-    
-    html = f"""<!DOCTYPE html>
+    # --- PSU (2565) ---
+    elif school_id == '2565':
+        psu_id = f"9{random.randint(10000000, 99999999)}"
+        return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -228,7 +242,7 @@ def generate_html(first_name, last_name, email=None, school_id='2565'):
             <div class="info-group"><div class="info-label">Enrollment Status</div><div class="status-badge">✅ Full-Time Student</div></div>
             <div class="info-group"><div class="info-label">Academic Program</div><div class="info-val">{major} (BS)</div></div>
             <div class="info-group"><div class="info-label">Campus</div><div class="info-val">University Park (Main)</div></div>
-            <div class="info-group"><div class="info-label">Semester Dates</div><div class="info-val">{term_dates}, {now.year}</div></div>
+            <div class="info-group"><div class="info-label">Semester Dates</div><div class="info-val">{term_dates_str}</div></div>
         </div>
         <div class="data-timestamp">Generated on: <strong>{date_str}</strong> at {time_str}</div>
         <table class="schedule-table">
@@ -243,8 +257,70 @@ def generate_html(first_name, last_name, email=None, school_id='2565'):
 </div>
 </body>
 </html>"""
-    return html
 
+    # --- GENERIC TEMPLATE (Default for all other unis) ---
+    else:
+        student_id = f"S{random.randint(10000000, 99999999)}"
+        # Generic "Official Enrollment Verification" Letter
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Official Enrollment Verification</title>
+    <style>
+        body {{ font-family: "Times New Roman", Times, serif; background: #fff; padding: 40px; color: #000; }}
+        .letter-container {{ max-width: 800px; margin: 0 auto; border: 1px solid #fff; }}
+        .header {{ text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 20px; }}
+        .uni-name {{ font-size: 28px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; font-family: Arial, sans-serif; }}
+        .doc-title {{ font-size: 18px; font-weight: bold; margin-top: 20px; text-decoration: underline; }}
+        .content {{ line-height: 1.6; font-size: 12pt; text-align: justify; }}
+        .info-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+        .info-table td {{ padding: 8px; vertical-align: top; }}
+        .label {{ font-weight: bold; width: 200px; }}
+        .footer {{ margin-top: 60px; font-size: 11pt; }}
+        .signature-line {{ border-top: 1px solid #000; width: 300px; margin-top: 50px; padding-top: 5px; }}
+        .watermark {{ position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 100px; color: rgba(0,0,0,0.03); z-index: -1; white-space: nowrap; }}
+    </style>
+</head>
+<body>
+    <div class="letter-container">
+        <div class="header">
+            <div class="uni-name">{school_name}</div>
+            <div>Office of the Registrar</div>
+            <div class="doc-title">OFFICIAL ENROLLMENT VERIFICATION</div>
+        </div>
+
+        <div class="content">
+            <p><strong>Date:</strong> {date_str}</p>
+            <p><strong>To Whom It May Concern:</strong></p>
+            
+            <p>This letter certifies that the student named below is currently enrolled as a full-time student at {school_name} for the <strong>{current_term}</strong> academic term.</p>
+            
+            <table class="info-table">
+                <tr><td class="label">Student Name:</td><td>{name}</td></tr>
+                <tr><td class="label">Student ID:</td><td>{student_id}</td></tr>
+                <tr><td class="label">Enrollment Status:</td><td>Full-Time</td></tr>
+                <tr><td class="label">Academic Program:</td><td>{major}</td></tr>
+                <tr><td class="label">Current Term:</td><td>{current_term} ({term_dates_str})</td></tr>
+                <tr><td class="label">Anticipated Graduation:</td><td>May {year + 3}</td></tr>
+            </table>
+            
+            <p>This certification is provided at the request of the student. If you have any questions regarding this information, please contact the Office of the Registrar.</p>
+        </div>
+
+        <div class="footer">
+            <p>Sincerely,</p>
+            <div style="height: 40px;"></div>
+            <div class="signature-line">
+                <strong>Office of the Registrar</strong><br>
+                {school_name}
+            </div>
+        </div>
+        
+        <div class="watermark">OFFICIAL DOCUMENT</div>
+    </div>
+</body>
+</html>"""
 
 async def generate_image(first_name, last_name, email=None, school_id='2565'):
     """
@@ -270,7 +346,7 @@ async def generate_image(first_name, last_name, email=None, school_id='2565'):
                 headless=True,
                 args=['--no-sandbox', '--disable-setuid-sandbox']
             )
-            page = await browser.new_page(viewport={'width': 1200, 'height': 900})
+            page = await browser.new_page(viewport={'width': 900, 'height': 1100})
             await page.set_content(html_content, wait_until='load')
             await page.wait_for_timeout(500)  # Tunggu style loading
             screenshot_bytes = await page.screenshot(type='png', full_page=True)
@@ -297,8 +373,8 @@ if __name__ == '__main__':
     first_name = "Test"
     last_name = "User"
     
-    # Test all 3 schools
-    schools = ['2565', '3499', '3568']
+    # Test all 3 schools + Generic
+    schools = ['2565', '3499', '3568', '10008577'] # UI ID
     
     import asyncio
     
