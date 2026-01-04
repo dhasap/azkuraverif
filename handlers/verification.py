@@ -143,7 +143,8 @@ async def process_url(message: types.Message, state: FSMContext):
     VerifierClass = SERVICES[service_key]['verifier']
     verif_id = VerifierClass.parse_verification_id(url)
     
-    if not verif_id and VerifierClass != BoltVerifier:
+    # YouTubeVerifier dan BoltVerifier support auto-create session via URL
+    if not verif_id and VerifierClass not in [BoltVerifier, YouTubeVerifier]:
         await message.reply("❌ <b>Gagal membaca ID Verifikasi.</b>\nPastikan Anda menyalin link lengkap dari halaman SheerID.", parse_mode="HTML")
         return
         
@@ -247,8 +248,13 @@ async def execute_verification(callback: types.CallbackQuery, state: FSMContext)
     
     try:
         VerifierClass = SERVICES[service_key]['verifier']
-        if VerifierClass == BoltVerifier:
-            verifier = VerifierClass(original_url, verification_id=verif_id)
+        # YouTube dan Bolt butuh URL asli untuk auto-session / parsing parameter
+        if VerifierClass in [BoltVerifier, YouTubeVerifier]:
+            verifier = VerifierClass(original_url)
+            # BoltVerifier might accept verification_id separately, but YouTubeVerifier now takes url in __init__
+            # To be safe for Bolt legacy signature:
+            if VerifierClass == BoltVerifier:
+                 verifier = VerifierClass(original_url, verification_id=verif_id)
         else:
             verifier = VerifierClass(verif_id)
         
