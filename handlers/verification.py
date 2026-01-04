@@ -220,6 +220,10 @@ async def process_email(message: types.Message, state: FSMContext):
 async def proceed_to_confirm(message, state, service_key, verif_id):
     """Helper untuk menampilkan konfirmasi akhir"""
     await state.set_state(VerifyState.confirm_process)
+    
+    # Ambil data dari state untuk email
+    data = await state.get_data()
+    
     cost = SERVICES[service_key]['cost']
     user_data = db.get_user(message.from_user.id)
     
