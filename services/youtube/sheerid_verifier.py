@@ -191,9 +191,9 @@ class SheerIDVerifier:
                 }
                 
                 # Tambahkan externalUserId jika ada (penting untuk YouTube agar akun terhubung)
-                if self.external_user_id:
-                    step2_body["externalUserId"] = self.external_user_id
-                    step2_body["metadata"]["externalUserId"] = self.external_user_id
+                # Note: Reference script does not send this in Step 2, relying on installPageUrl
+                # if self.external_user_id:
+                #    step2_body["metadata"]["externalUserId"] = self.external_user_id
 
                 step2_data, step2_status = await self._sheerid_request(
                     client,
