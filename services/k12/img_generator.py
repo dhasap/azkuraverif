@@ -6,6 +6,8 @@ import random
 import time
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 
 def generate_teacher_badge(first_name: str, last_name: str, school_name: str) -> bytes:
     """Generate fake K12 teacher badge PNG"""
@@ -84,3 +86,34 @@ def generate_teacher_badge(first_name: str, last_name: str, school_name: str) ->
 def generate_teacher_image(first_name: str, last_name: str) -> bytes:
     # Use a generic name if school not provided, though it should be
     return generate_teacher_badge(first_name, last_name, "Thomas Jefferson High School")
+
+async def generate_teacher_png(first_name: str, last_name: str) -> bytes:
+    """Async wrapper for compatibility"""
+    return generate_teacher_image(first_name, last_name)
+
+def generate_teacher_pdf(first_name: str, last_name: str) -> bytes:
+    """Generate a PDF containing the teacher badge"""
+    png_bytes = generate_teacher_image(first_name, last_name)
+    
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    
+    # Draw image from bytes using a temporary file or ImageReader
+    # ReportLab ImageReader can take BytesIO
+    from reportlab.lib.utils import ImageReader
+    image = ImageReader(BytesIO(png_bytes))
+    
+    # Center the image roughly
+    img_width = 400
+    img_height = 280 # Proportional to 500x350
+    x = (width - img_width) / 2
+    y = (height - img_height) / 2
+    
+    c.drawImage(image, x, y, width=img_width, height=img_height)
+    
+    c.setFont("Helvetica", 12)
+    c.drawString(x, y - 20, "Official Teacher Identification Document")
+    
+    c.save()
+    return buffer.getvalue()
