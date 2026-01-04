@@ -40,20 +40,23 @@ def main_menu() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="📺 YouTube", callback_data="service_youtube"),
         ],
         [
-            InlineKeyboardButton(text="🧠 ChatGPT / Service", callback_data="service_chatgpt"),
-            InlineKeyboardButton(text="☁️ One / Bolt", callback_data="service_one"),
+            InlineKeyboardButton(text="🧠 Perplexity", callback_data="service_perplexity"),
+            InlineKeyboardButton(text="☁️ OneDrive / Bolt", callback_data="service_one"),
+        ],
+        [
+            InlineKeyboardButton(text="👨‍🏫 K12 Teacher", callback_data="service_k12"),
+            InlineKeyboardButton(text="🤖 ChatGPT", callback_data="service_chatgpt"), # Placeholder if needed
         ],
         [
             InlineKeyboardButton(text="👤 Profil Saya", callback_data="menu_profile"),
-            InlineKeyboardButton(text="💳 Topup / Redeem", callback_data="menu_topup"),
-        ],
-        [
-            InlineKeyboardButton(text="💳 Topup / Redeem", callback_data="menu_topup"),
             InlineKeyboardButton(text="📅 Daily Check-in", callback_data="action_checkin"),
         ],
         [
-            InlineKeyboardButton(text="📢 Channel", url="https://t.me/azkura_channel"), # Ganti nanti
+            InlineKeyboardButton(text="💳 Topup / Redeem", callback_data="menu_topup"),
             InlineKeyboardButton(text="❓ Bantuan", callback_data="menu_help"),
+        ],
+        [
+            InlineKeyboardButton(text="📢 Channel", url=config.CHANNEL_URL),
         ]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
