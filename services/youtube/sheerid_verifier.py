@@ -155,8 +155,12 @@ class SheerIDVerifier:
 
             # Membuat PNG dokumen (Async)
             logger.info("Langkah 1/5: Membuat dokumen mahasiswa...")
-            img_data = await generate_image(first_name, last_name, school_id)
+            # Sertakan email agar muncul di dokumen (untuk YouTube matching)
+            img_data = await generate_image(first_name, last_name, email, school_id)
             file_size = len(img_data)
+            
+            # Kita bungkus ke format assets yang diharapkan logic bawah (untuk kompabilitas)
+            assets = [{"file_name": "student_schedule.png", "data": img_data}]
             
             async with httpx.AsyncClient(timeout=30.0) as client:
                 # 0. Cek apakah ID sudah ada, jika belum buat baru (Auto-Session)
