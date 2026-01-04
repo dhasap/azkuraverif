@@ -1,4 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
+import config
 
 def get_main_keyboard(is_admin: bool = False) -> ReplyKeyboardMarkup:
     """Menu Navigasi Bawah (Persistent)"""
