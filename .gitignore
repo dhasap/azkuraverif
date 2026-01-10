@@ -80,3 +80,6 @@ test_*.pdf
 @source-code/
 
 source-code/
+
+# Init Qwen Code
+QWEN.md

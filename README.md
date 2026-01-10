@@ -1,12 +1,12 @@
-# 🌐 MSVERIFY - Professional Verification Platform
+# 🌐 AZKURA VERIFY - Telegram Bot for SheerID Verification
 
 ![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![Python](https://img.shields.io/badge/python-3.11+-green)
-![Flask](https://img.shields.io/badge/flask-3.0+-red)
+![Aiogram](https://img.shields.io/badge/aiogram-3.0+-red)
 
-> **MSVERIFY** - Modern Web Application untuk Automated Student & Teacher Verification dengan UI/UX Professional dan Dark Theme Modern
+> **AZKURA VERIFY** - Telegram Bot untuk Automated Student & Teacher Verification melalui SheerID dengan sistem poin dan manajemen pengguna
 >
-> **Created by Masanto © 2025** | Platform verifikasi otomatis dengan teknologi terkini
+> **Created by Azkura © 2025** | Platform verifikasi otomatis berbasis Telegram dengan teknologi terkini
 
 ---
 
@@ -19,8 +19,6 @@
 - [Installation](#-installation)
 - [Configuration](#-configuration)
 - [Admin Panel](#-admin-panel)
-- [Template Customization](#-template-customization)
-- [API Documentation](#-api-documentation)
 - [Deployment](#-deployment)
 - [Troubleshooting](#-troubleshooting)
 - [Project Structure](#-project-structure)
@@ -29,52 +27,46 @@
 
 ## 📋 Overview
 
-Platform berbasis Python Flask untuk automasi verifikasi identitas student/teacher melalui SheerID. Sistem otomatis generate informasi identitas, membuat dokumen verifikasi, dan submit ke platform SheerID.
+Telegram bot berbasis Python aiogram untuk automasi verifikasi identitas student/teacher melalui SheerID. Sistem otomatis generate informasi identitas, membuat dokumen verifikasi, dan submit ke platform SheerID dengan sistem poin untuk manajemen penggunaan.
 
 ---
 
 ## 🎯 Supported Services
 
-| Service | Type | Status | Auto Code | Description |
-|---------|------|--------|-----------|-------------|
-| **Gemini One Pro** | Teacher | ✅ Active | ❌ | Google AI Studio Education Discount |
-| **ChatGPT K12** | Teacher | ✅ Active | ❌ | OpenAI ChatGPT Education Discount |
-| **Spotify Student** | Student | ✅ Active | ❌ | Spotify Premium Student Discount |
-| **Bolt.new Teacher** | Teacher | ✅ Active | ✅ Yes | Bolt.new Pro Education (Auto retrieve code) |
-| **YouTube Premium** | Student | ⚠️ Beta | ❌ | YouTube Premium Student Discount |
+| Service | Type | Status | Cost | Description |
+|---------|------|--------|------|-------------|
+| **Spotify Premium** | Student | ✅ Active | 1 Point | Spotify Premium Student Discount |
+| **YouTube Premium** | Student | ✅ Active | 1 Point | YouTube Premium Student Discount |
+| **K12 Teacher** | Teacher | ✅ Active | 3 Points | ChatGPT K12 Teacher Verification |
+| **Military / Veteran** | Military | ✅ Active | 3 Points | ChatGPT Military/Veteran Verification |
+| **Google One/Bolt** | Teacher | ✅ Active | 2 Points | Google One/Bolt.new Teacher Verification |
+| **Perplexity Pro** | Student | ✅ Active | 2 Points | Perplexity Pro Student Verification |
 
 ---
 
 ## ✨ Key Features
 
-- 🎨 **Modern Dark Theme UI**: Purple gradient design dengan 3D effects menggunakan Three.js
-- 🔐 **Secure Authentication**: Session-based dengan bcrypt password hashing
+- 🤖 **Telegram Bot Interface**: Full-featured bot dengan menu interaktif
+- 🔐 **Secure Authentication**: Session-based dengan database terenkripsi
 - 🚀 **One-Click Verification**: Automated verification process dengan browser automation
 - 💰 **Points System**: Daily check-in, referral rewards, redemption codes
 - 👥 **User Management**: Complete profile management & verification history
 - 🛡️ **Admin Dashboard**: Comprehensive admin panel dengan real-time statistics
 - 📊 **Analytics**: Detailed verification stats dan success rate monitoring
-- 🌐 **RESTful API**: Clean API architecture untuk extensibility
-- 📱 **Fully Responsive**: Perfect display di semua devices (mobile, tablet, desktop)
+- 📱 **Fully Integrated**: Seamless Telegram experience
 - 🔄 **Auto Code Retrieval**: Bolt.new service mendapat verification code otomatis
+- 🛡️ **Force Subscribe**: Fitur wajib join channel sebelum menggunakan bot
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Framework**: Flask 3.0+ (Python web framework)
-- **Database**: MySQL 5.7+ / MariaDB
-- **Authentication**: Werkzeug security + Flask sessions
+- **Framework**: aiogram 3.0+ (Telegram Bot Framework)
+- **Database**: Turso/LibSQL (SQLite-compatible distributed database)
+- **Authentication**: Telegram user authentication
 - **Browser Automation**: Playwright Chromium
 - **HTTP Client**: httpx untuk async requests
-
-### Frontend
-- **UI Framework**: Bootstrap 5.3
-- **Icons**: Bootstrap Icons 1.11
-- **3D Background**: Three.js particles animation
-- **Styling**: Custom CSS dengan CSS Variables (dark theme)
-- **JavaScript**: Vanilla JS + jQuery
 
 ### Document Processing
 - **PDF Generation**: xhtml2pdf, reportlab
@@ -83,7 +75,6 @@ Platform berbasis Python Flask untuk automasi verifikasi identitas student/teach
 
 ### DevOps
 - **Containerization**: Docker + Docker Compose
-- **Web Server**: Gunicorn (production)
 - **Process Manager**: Supervisor (optional)
 - **Reverse Proxy**: Nginx (optional)
 
@@ -101,7 +92,7 @@ Platform berbasis Python Flask untuk automasi verifikasi identitas student/teach
 
 ```bash
 # 1. Navigate ke project directory
-cd msverif
+cd azkuraverif
 
 # 2. Copy environment file
 cp .env.example .env
@@ -111,15 +102,16 @@ notepad .env  # Windows
 nano .env     # Linux/Mac
 
 # Sesuaikan:
-# - SECRET_KEY (generate random string)
-# - MYSQL_PASSWORD (strong password)
-# - DEFAULT_ADMIN_EMAIL (email admin)
+# - BOT_TOKEN (dari @BotFather)
+# - TURSO_DATABASE_URL (URL database Turso)
+# - TURSO_AUTH_TOKEN (token autentikasi Turso)
+# - ADMIN_IDS (ID Telegram admin)
 
 # 4. Build dan jalankan
 docker-compose up -d --build
 
-# 5. Akses aplikasi
-# http://localhost:6969
+# 5. Akses bot di Telegram
+# Cari bot Anda dan mulai chatting
 ```
 
 **Docker Commands:**
@@ -128,10 +120,10 @@ docker-compose up -d --build
 # Lihat logs
 docker-compose logs -f web
 
-# Stop aplikasi
+# Stop bot
 docker-compose down
 
-# Restart aplikasi
+# Restart bot
 docker-compose restart
 
 # Rebuild setelah update
@@ -147,13 +139,13 @@ docker-compose ps
 
 **Prerequisites:**
 - Python 3.11+
-- MySQL 5.7+ atau MariaDB 10.3+
+- Turso database account
 
 **Steps:**
 
 ```bash
 # 1. Navigate ke project directory
-cd msverif
+cd azkuraverif
 
 # 2. Buat virtual environment
 python -m venv venv
@@ -170,34 +162,12 @@ pip install -r requirements.txt
 # 5. Install Playwright browsers
 playwright install chromium
 
-# 6. Setup MySQL database
-mysql -u root -p
-```
-
-```sql
-CREATE DATABASE sheerid_verify CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'sheerid_user'@'localhost' IDENTIFIED BY 'your_password';
-GRANT ALL PRIVILEGES ON sheerid_verify.* TO 'sheerid_user'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
-```
-
-```bash
-# 7. Copy dan edit .env file
+# 6. Copy dan edit .env file
 cp .env.example .env
 nano .env
 
-# 8. Jalankan aplikasi
-python app.py
-
-# Aplikasi running di: http://localhost:6969
-```
-
-**Production Mode (Gunicorn):**
-
-```bash
-pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
+# 7. Jalankan bot
+python main.py
 ```
 
 ---
@@ -209,71 +179,56 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 Copy dari `.env.example` dan sesuaikan:
 
 ```env
-# === APPLICATION ===
-APP_NAME=MSVERIFY
-APP_URL=http://localhost:6969
-SECRET_KEY=generate-random-string-here-32-chars
-FLASK_ENV=development
+# === BOT CONFIGURATION ===
+BOT_TOKEN=your_telegram_bot_token_here
+ADMIN_IDS=123456789,987654321
 
-# === DATABASE ===
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_USER=sheerid_user
-MYSQL_PASSWORD=your_strong_password
-MYSQL_DATABASE=sheerid_verify
+# === DATABASE CONFIGURATION ===
+TURSO_DATABASE_URL=your_turso_database_url
+TURSO_AUTH_TOKEN=your_turso_auth_token
 
-# === DEFAULT ADMIN ===
-# User yang register dengan email ini otomatis jadi admin
-DEFAULT_ADMIN_EMAIL=admin@msverify.local
-DEFAULT_ADMIN_PASSWORD=admin123456
+# === PROXY CONFIGURATION (Optional) ===
+PERPLEXITY_PROXY=proxy_url_if_needed
 
-# === POINTS SYSTEM ===
-CHECKIN_POINTS=10
-INVITE_POINTS=50
-SIGNUP_POINTS=100
+# === ECONOMY SYSTEM ===
+VERIFY_COST=1
+CHECKIN_REWARD=1
+REFERRAL_REWARD=2
+REGISTER_REWARD=3
 
-# === SUPPORT ===
-HELP_URL=https://wa.me/your-whatsapp-number
+# === LINKS & SUPPORT ===
+CHANNEL_URL=https://t.me/azkuraairdrop
+SUPPORT_URL=https://t.me/dhasap1220
+FORCE_SUB_CHANNEL=@azkuraairdrop
 ```
 
-### Generate Secret Key
+### Database Setup
 
-```python
-import secrets
-print(secrets.token_hex(32))
-# Output: 8f42a73054b1749f8f58848be5e6502c02c1e29f18b147b7a5c3d9e6f4b2a1c7
-```
-
-### Database Auto-Initialize
-
-Database tables dibuat otomatis saat aplikasi pertama kali dijalankan. Pastikan:
-1. MySQL server running
-2. Database sudah dibuat
-3. User punya privileges yang cukup
+Database Turso/LibSQL dibuat otomatis saat bot pertama kali dijalankan. Pastikan:
+1. Turso database URL dan token valid
+2. Koneksi internet stabil
+3. Hak akses database cukup
 
 ---
 
 ## 🔐 Admin Panel
 
-### Cara Login Admin
+### Cara Akses Admin
 
-**Method 1: Auto Admin (Recommended)**
+**Method 1: Auto Admin (Configured in .env)**
 
-1. Set email admin di `.env`:
+1. Set admin IDs di `.env`:
    ```env
-   DEFAULT_ADMIN_EMAIL=admin@msverify.local
+   ADMIN_IDS=123456789,987654321
    ```
 
-2. Register akun baru dengan email tersebut
-
-3. Akun otomatis menjadi admin
-
-4. Login dan akses: `http://localhost:5000/admin`
+2. Gunakan bot sebagai admin
+3. Akses perintah admin melalui menu bot
 
 **Method 2: Manual via Database**
 
 ```sql
-UPDATE users SET is_admin = 1 WHERE email = 'your@email.com';
+UPDATE users SET is_admin = 1 WHERE telegram_id = your_telegram_id;
 ```
 
 ### Fitur Admin Panel
@@ -314,259 +269,9 @@ UPDATE users SET is_admin = 1 WHERE email = 'your@email.com';
    - View broadcast history
    - Delete old broadcasts
 
----
-
-## 🎨 Template Customization
-
-### ⚠️ WAJIB EDIT TEMPLATE SEBELUM PAKAI!
-
-**PENTING**: Template yang disertakan adalah **CONTOH/SAMPLE** saja untuk referensi struktur. 
-
-**ANDA WAJIB EDIT DAN CUSTOMIZE:**
-- ❌ **JANGAN** langsung pakai template default
-- ✅ **WAJIB** ganti nama school/district dengan milik Anda
-- ✅ **WAJIB** customize design, warna, layout
-- ✅ **WAJIB** sesuaikan dengan kebutuhan verifikasi Anda
-
-**Ini adalah full source code yang dishare, bukan layanan siap pakai. Template pribadi TIDAK disertakan.**
-
----
-
-### 🔥 WORKFLOW WAJIB SEBELUM EDIT TEMPLATE!
-
-**LANGKAH PENTING - JANGAN SKIP!**
-
-#### **Step 1: Testing Manual Dulu (WAJIB)**
-
-Sebelum edit template di aplikasi ini, **WAJIB testing manual terlebih dahulu**:
-
-1. **Buat ID Card Sendiri**
-   - Racik ID card/dokumen Anda sendiri di luar aplikasi ini
-   - Gunakan Photoshop, Canva, atau tools design lainnya
-   - Buat design yang realistis dan profesional
-
-2. **Testing dengan SheerID Manual**
-   - Upload ID card racikan Anda ke SheerID secara manual
-   - Test di platform asli (bukan aplikasi ini)
-   - Coba submit verification manual dulu
-
-3. **Pastikan BERHASIL Terlebih Dahulu**
-   - ✅ ID card harus **APPROVED** oleh SheerID
-   - ✅ Verification harus **SUCCESS** 100%
-   - ✅ Tidak ada rejection atau masalah
-   - ❌ Jika ditolak/gagal, **JANGAN** lanjut ke aplikasi ini
-
-4. **Catat School/District yang Approved**
-   - Simpan nama school/district yang berhasil
-   - Catat semua detail yang di-approve
-   - Gunakan yang sama untuk template di aplikasi ini
-
-#### **Step 2: Edit Template di Aplikasi Ini**
-
-**HANYA setelah testing manual BERHASIL**, baru edit template di aplikasi:
-
-```bash
-# 1. Buka file template
-notepad k12/card-temp.html
-
-# 2. GANTI dengan school/district yang SUDAH TERBUKTI BERHASIL
-# - Gunakan nama PERSIS seperti yang di-approve
-# - Copy design yang sudah berhasil
-# - Sesuaikan warna dan layout yang sama
-
-# 3. Testing di aplikasi
-python app.py
-```
-
-#### **Step 3: Gunakan School yang Sudah Approved**
-
-**WAJIB:**
-- ✅ Gunakan **school/district yang sudah terbukti approved**
-- ✅ Jangan coba-coba dengan random school
-- ✅ Pakai nama dan detail yang persis sama
-- ✅ Replicate design yang sudah berhasil
-
-**JANGAN:**
-- ❌ Langsung edit template tanpa testing manual
-- ❌ Pakai school/district random yang belum di-test
-- ❌ Asal ganti-ganti nama tanpa verifikasi
-- ❌ Skip proses testing manual
-
----
-
-### 🎯 Kenapa Harus Testing Manual Dulu?
-
-1. **Menghindari Rejection**: SheerID bisa detect pattern. Testing manual lebih aman.
-2. **Verifikasi Design**: Pastikan design Anda memang diterima sebelum automasi.
-3. **Hemat Waktu**: Jangan buang waktu debug aplikasi untuk template yang memang ditolak.
-4. **Success Rate Tinggi**: Template yang sudah proven berhasil = automasi lebih smooth.
-
-**INGAT**: Aplikasi ini hanya AUTOMASI. Kualitas verifikasi tergantung TEMPLATE Anda!
-
----
-
-### Lokasi Template
-
-```
-msverif/
-├── k12/card-temp.html          # ChatGPT K12 (HTML) - SAMPLE
-├── one/img_generator.py        # Gemini One (Python) - SAMPLE
-├── spotify/img_generator.py    # Spotify (Python) - SAMPLE
-├── Boltnew/img_generator.py    # Bolt.new (Python) - SAMPLE
-└── youtube/img_generator.py    # YouTube (Python) - SAMPLE
-```
-
-### WAJIB Edit Template HTML (k12/card-temp.html)
-
-```bash
-# 1. Buka file
-notepad k12/card-temp.html
-
-# 2. WAJIB GANTI:
-# - Nama School District (contoh: "School District Portal")
-# - Department name (contoh: "Education - Teaching Staff")
-# - Warna theme (--primary-blue, --border-gray, dll)
-# - Layout dan design sesuai kebutuhan
-# - Logo sekolah/institusi Anda
-
-# 3. Edit CSS untuk personalisasi:
-:root {
-    --primary-blue: #0056b3;    /* Ganti warna */
-    --border-gray: #dee2e6;     /* Ganti border */
-    --bg-gray: #f8f9fa;         /* Ganti background */
-}
-
-# 4. Save dan restart aplikasi
-docker-compose restart web
-```
-
-### WAJIB Edit Template Python (Services Lain)
-
-```python
-# File: spotify/img_generator.py
-
-# WAJIB GANTI semua text, warna, dan branding
-primary_color = colors.HexColor("#1DB954")  # Ganti warna
-c.drawString(100, 700, "STUDENT ID CARD")   # Ganti text
-c.setFont("Helvetica-Bold", 16)             # Sesuaikan font
-
-# Tambah logo/branding Anda sendiri
-# c.drawImage("your_logo.png", x, y, width, height)
-```
-
-### 💡 Tips Membuat Template yang Berhasil
-
-**Berdasarkan Testing Manual Anda:**
-
-1. **School/District yang Proven Works**
-   - Gunakan school yang **sudah Anda test dan approved**
-   - Jangan ganti-ganti school setelah berhasil
-   - Catat semua detail yang membuat verification success
-
-2. **Design Consistency**
-   - Replicate **persis** design yang berhasil di testing manual
-   - Gunakan warna, font, layout yang sama
-   - Jangan ubah elemen yang sudah proven works
-
-3. **Quality Matters**
-   - Image resolution tinggi (minimal 1200x800px)
-   - Text harus clear dan terbaca
-   - Logo dan branding professional
-
-4. **Data Realistis**
-   - Nama harus masuk akal (first + last name)
-   - ID numbers format realistic
-   - Date format sesuai standar US
-
-### ⚠️ Disclaimer Template
-
-Template yang disertakan HANYA sebagai contoh struktur dan cara kerja system. Anda bertanggung jawab penuh untuk:
-
-1. **Testing Manual Terlebih Dahulu**
-   - WAJIB test ID card racikan Anda secara manual
-   - Pastikan APPROVED sebelum implement di aplikasi
-   - Gunakan school/district yang sudah terbukti berhasil
-
-2. **Legal & Compliance**
-   - Membuat template yang sesuai dengan kebutuhan Anda
-   - Memastikan template tidak melanggar hak cipta pihak lain
-   - Menyesuaikan design dengan institusi/kebutuhan Anda
-   - Bertanggung jawab penuh atas penggunaan aplikasi
-
-3. **Success Rate**
-   - Kualitas template = kualitas verification
-   - Aplikasi hanya AUTOMASI, bukan magic
-   - Template yang proven works = success rate tinggi
-
-**Lihat TEMPLATE_GUIDE.md untuk panduan lengkap customization**
-
----
-
-### 🚨 PERINGATAN PENTING
-
-**JANGAN:**
-- ❌ Langsung pakai template default tanpa edit
-- ❌ Skip proses testing manual
-- ❌ Gunakan school random yang belum di-test
-- ❌ Expect aplikasi bekerja dengan template asal-asalan
-
-**LAKUKAN:**
-- ✅ Testing manual dulu sampai APPROVED
-- ✅ Catat school/district yang berhasil
-- ✅ Edit template dengan detail yang sudah proven
-- ✅ Maintain consistency dengan yang berhasil
-
-**Remember**: Ini tool AUTOMASI. Anda yang bertanggung jawab untuk template quality!
-
----
-
-## 📡 API Documentation
-
-### Authentication Endpoints
-
-```http
-POST /register
-POST /login
-POST /logout
-```
-
-### User Endpoints
-
-```http
-GET  /api/user/profile
-POST /api/checkin
-POST /api/redeem
-```
-
-### Verification Endpoints
-
-```http
-POST /api/verify
-{
-    "service": "gemini_one|chatgpt_k12|spotify|boltnew|youtube",
-    "url": "https://services.sheerid.com/verify/..."
-}
-```
-
-### Admin Endpoints
-
-```http
-GET  /api/admin/users
-GET  /api/admin/stats
-GET  /api/admin/codes
-POST /api/admin/codes/create
-GET  /api/admin/verifications
-```
-
-**Response Format:**
-
-```json
-{
-    "success": true,
-    "message": "Operation successful",
-    "data": { }
-}
-```
+7. **Maintenance Mode**
+   - Enable/disable bot maintenance
+   - Allow access only to admins during maintenance
 
 ---
 
@@ -582,53 +287,33 @@ cp .env.example .env
 nano .env
 
 # Edit:
-FLASK_ENV=production
-SECRET_KEY=<strong-random-key>
-APP_URL=https://yourdomain.com
-MYSQL_PASSWORD=<strong-password>
+BOT_TOKEN=your_production_bot_token
+TURSO_DATABASE_URL=your_production_turso_url
+TURSO_AUTH_TOKEN=your_production_turso_token
+ADMIN_IDS=your_admin_telegram_ids
 
 # 3. Build dan run
 docker-compose up -d --build
 
-# 4. Setup Nginx (optional)
-```
-
-### Nginx Configuration
-
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-
-    location / {
-        proxy_pass http://localhost:5000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-}
-```
-
-### SSL Certificate (Let's Encrypt)
-
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d yourdomain.com
+# 4. Monitor bot
+docker-compose logs -f web
 ```
 
 ---
 
 ## 🔧 Troubleshooting
 
-### Database Connection Error
+### Bot Not Starting
 
 ```bash
-# Check MySQL running
-sudo systemctl status mysql
-sudo systemctl start mysql
+# Check environment variables
+echo $BOT_TOKEN
 
-# Test connection
-mysql -u sheerid_user -p sheerid_verify
+# Check logs
+docker-compose logs web
+
+# Test database connection
+python -c "import libsql_experimental; conn = libsql_experimental.connect(database='your_url', auth_token='your_token'); print('Connected')"
 ```
 
 ### Playwright Browser Not Found
@@ -637,34 +322,26 @@ mysql -u sheerid_user -p sheerid_verify
 playwright install chromium
 ```
 
-### Port Already in Use
+### Database Connection Error
 
 ```bash
-# Linux/Mac
-lsof -i :5000
-kill -9 <PID>
-
-# Windows
-netstat -ano | findstr :5000
-taskkill /PID <PID> /F
+# Check Turso credentials
+echo $TURSO_DATABASE_URL
+echo $TURSO_AUTH_TOKEN
 ```
 
-### CSS/JS Not Loading
+### Bot Not Responding
 
 ```bash
-# Clear browser cache: Ctrl+Shift+R
-
-# Restart aplikasi
-docker-compose restart web
+# Check if bot token is valid
+curl https://api.telegram.org/bot$BOT_TOKEN/getMe
 ```
 
-### Template Not Found
+### Points System Not Working
 
 ```bash
-# Check file exists
-ls -la k12/card-temp.html
-
-# Restore dari backup jika hilang
+# Check database tables
+# Ensure users table has balance column
 ```
 
 ---
@@ -672,51 +349,40 @@ ls -la k12/card-temp.html
 ## 📝 Project Structure
 
 ```
-msverif/
-├── app.py                      # Main Flask application
-├── api_verify.py               # Verification API routes
-├── api_admin.py                # Admin API routes
-├── config.py                   # Configuration
-├── database_mysql.py           # Database operations
-├── requirements.txt            # Dependencies
-├── docker-compose.yml          # Docker config
-├── Dockerfile                  # Docker image
-├── .env                        # Environment variables
-├── README.md                   # This file
-├── TEMPLATE_GUIDE.md           # Template customization guide
+azkuraverif/
+├── main.py                      # Main Telegram bot application
+├── config.py                    # Configuration settings
+├── database_turso.py            # Database operations
+├── keyboards.py                 # Inline keyboard definitions
+├── parse_veterans.py            # Veteran data parser
+├── requirements.txt             # Dependencies
+├── docker-compose.yml           # Docker config
+├── Dockerfile                   # Docker image
+├── .env                         # Environment variables
+├── README.md                    # This file
+├── .gitignore                   # Git ignore rules
 │
-├── templates/                  # HTML templates
-│   ├── base.html
-│   ├── index.html
-│   ├── login.html
-│   ├── register.html
-│   ├── dashboard.html
-│   ├── verify.html
-│   └── admin.html
+├── handlers/                    # Telegram bot handlers
+│   ├── start.py                 # Start command handler
+│   ├── user_actions.py          # User action handlers
+│   ├── verification.py          # Verification process handlers
+│   ├── admin.py                 # Admin command handlers
+│   └── navigation.py            # Navigation handlers
 │
-├── static/                     # Static files
-│   ├── css/
-│   │   └── style.css          # Main stylesheet
-│   └── js/
-│       └── main.js            # Main JavaScript
+├── middlewares/                 # Bot middlewares
+│   └── forcesub.py              # Force subscribe middleware
 │
-├── utils/                      # Utilities
-│   ├── checks.py              # Validation
-│   ├── concurrency.py         # Rate limiting
-│   └── messages.py            # Flash messages
+├── services/                    # Verification services
+│   ├── Boltnew/                 # Bolt.new verification service
+│   ├── k12/                     # K12 teacher verification
+│   ├── military/                # Military/veteran verification
+│   ├── one/                     # Google One verification
+│   ├── perplexity/              # Perplexity verification
+│   ├── spotify/                 # Spotify verification
+│   ├── utils/                   # Utility functions
+│   └── youtube/                 # YouTube verification
 │
-├── k12/                        # ChatGPT K12 service
-│   ├── img_generator.py
-│   ├── name_generator.py
-│   ├── sheerid_verifier.py
-│   └── card-temp.html
-│
-├── one/                        # Gemini One service
-├── spotify/                    # Spotify service
-├── Boltnew/                    # Bolt.new service
-├── youtube/                    # YouTube service
-│
-└── logs/                       # Application logs
+├── data/                        # Data files
 ```
 
 ---
@@ -729,25 +395,24 @@ This project is licensed under the MIT License.
 
 ## ⚠️ Disclaimer
 
-This tool is for educational purposes only. Use responsibly and comply with all applicable terms of service and laws.
+This tool is for educational purposes only. Use responsibly and comply with all applicable terms of service and laws. The developer is not responsible for any misuse of this tool.
 
 ---
 
 ## 👤 Author
 
-**Masanto**  
+**Azkura**
 Created: 2025
 
 ---
 
 ## 🎉 Credits
 
-- Flask framework
-- Bootstrap 5
+- aiogram framework
+- Turso/LibSQL
 - Playwright browser automation
-- Three.js for 3D effects
 - Open source community
 
 ---
 
-**Made with ❤️ by Masanto © 2025**
+**Made with ❤️ by Azkura © 2025**

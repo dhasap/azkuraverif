@@ -99,6 +99,131 @@ async def callback_home(callback: types.CallbackQuery):
         f"💰 <b>Saldo Poin Anda:</b> {balance}\n\n"
         f"Silakan pilih layanan di bawah ini:"
     )
-    
+
     await callback.message.edit_text(text, reply_markup=keyboards.main_menu(), parse_mode="HTML")
     await callback.answer()
+
+@router.message(F.text == "🚀 Layanan Verifikasi")
+async def show_verification_services(message: types.Message):
+    """Handler untuk tombol navigasi bawah Layanan Verifikasi"""
+    user_data = db.get_user(message.from_user.id)
+    balance = user_data['balance'] if user_data else 0
+
+    text = (
+        f"🎯 <b>PILIH KATEGORI VERIFIKASI</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"💰 <b>Saldo Anda:</b> {balance} Poin\n\n"
+        f"Kami menyediakan berbagai layanan verifikasi:\n\n"
+        f"🎵 <b>Musik & Streaming</b>\n"
+        f"   • Spotify Premium Student\n"
+        f"   • YouTube Premium Student\n\n"
+        f"🎓 <b>Pendidikan</b>\n"
+        f"   • K12 Teacher Verification\n"
+        f"   • ChatGPT Education\n\n"
+        f"🤖 <b>AI & Tools</b>\n"
+        f"   • Google One/Bolt\n"
+        f"   • Perplexity Pro\n\n"
+        f"🎖️ <b>Militer</b>\n"
+        f"   • Military/Veteran Verification\n\n"
+        f"✨ <b>Pilih kategori yang Anda butuhkan:</b>"
+    )
+
+    kb = keyboards.service_categories()
+    await message.answer(text, reply_markup=kb, parse_mode="HTML")
+
+@router.message(F.text == "👤 Profil Saya")
+async def show_profile(message: types.Message):
+    """Handler untuk tombol navigasi bawah Profil Saya"""
+    user = message.from_user
+    user_data = db.get_user(user.id)
+    balance = user_data['balance'] if user_data else 0
+    full_name = user.first_name
+    if user.last_name:
+        full_name += f" {user.last_name}"
+
+    username = f"@{user.username}" if user.username else "Tidak ada"
+
+    text = (
+        f"👤 <b>PROFIL PENGGUNA</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🏷️ <b>Nama:</b> {full_name}\n"
+        f"🆔 <b>ID Telegram:</b> {user.id}\n"
+        f"👤 <b>Username:</b> {username}\n"
+        f"💰 <b>Saldo Poin:</b> {balance}\n\n"
+        f"📊 <b>Statistik:</b>\n"
+        f"   • Verifikasi Berhasil: Belum Tersedia\n"
+        f"   • Verifikasi Gagal: Belum Tersedia\n"
+        f"   • Total Penggunaan: Belum Tersedia\n\n"
+        f"✨ <b>Opsi Profil:</b>"
+    )
+
+    kb = keyboards.profile_menu()
+    await message.answer(text, reply_markup=kb, parse_mode="HTML")
+
+@router.message(F.text == "📅 Daily Check-in")
+async def daily_checkin(message: types.Message):
+    """Handler untuk tombol navigasi bawah Daily Check-in"""
+    user_data = db.get_user(message.from_user.id)
+    balance = user_data['balance'] if user_data else 0
+
+    text = (
+        f"🎁 <b>HADIAH HARIAN</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"💰 <b>Saldo Anda:</b> {balance} Poin\n\n"
+        f"🎯 <b>Hadiah Harian:</b>\n"
+        f"   • Bonus harian untuk pengguna aktif\n"
+        f"   • Hadiah: +{config.CHECKIN_REWARD} Poin\n"
+        f"   • Klaim sekali per hari\n\n"
+        f"⏰ <b>Waktu Tersisa:</b> Belum Tersedia\n\n"
+        f"✨ <b>Gunakan hadiah harian untuk verifikasi:</b>"
+    )
+
+    kb = keyboards.main_menu()
+    await message.answer(text, reply_markup=kb, parse_mode="HTML")
+
+@router.message(F.text == "💎 Topup Poin")
+async def topup_points(message: types.Message):
+    """Handler untuk tombol navigasi bawah Topup Poin"""
+    user_data = db.get_user(message.from_user.id)
+    balance = user_data['balance'] if user_data else 0
+
+    text = (
+        f"💎 <b>MANAJEMEN POIN</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"💰 <b>Saldo Anda:</b> {balance} Poin\n\n"
+        f"🎯 <b>Opsi Manajemen:</b>\n"
+        f"   • Topup Poin - Beli lebih banyak\n"
+        f"   • Redeem Kode - Tukar kode hadiah\n"
+        f"   • Referral - Undang teman & dapatkan poin\n\n"
+        f"🎁 <b>Program Referral:</b>\n"
+        f"   • Dapatkan +{config.REFERRAL_REWARD} Poin per pengguna baru\n"
+        f"   • Bagikan link referral Anda\n\n"
+        f"✨ <b>Pilih opsi di bawah ini:</b>"
+    )
+
+    kb = keyboards.main_menu()
+    await message.answer(text, reply_markup=kb, parse_mode="HTML")
+
+@router.message(F.text == "❓ Bantuan")
+async def show_help(message: types.Message):
+    """Handler untuk tombol navigasi bawah Bantuan"""
+    text = (
+        f"ℹ️ <b>PANDUAN & BANTUAN</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"🎯 <b>Cara Menggunakan Bot:</b>\n"
+        f"   1. Pilih layanan verifikasi\n"
+        f"   2. Siapkan link SheerID\n"
+        f"   3. Proses otomatis akan berjalan\n"
+        f"   4. Tunggu hasil verifikasi\n\n"
+        f"💡 <b>Tips Sukses:</b>\n"
+        f"   • Gunakan link resmi dari platform\n"
+        f"   • Pastikan saldo cukup\n"
+        f"   • Gunakan data valid\n\n"
+        f"📞 <b>Dukungan:</b>\n"
+        f"   • Hubungi admin jika ada masalah\n"
+        f"   • Gabung channel untuk info terbaru\n\n"
+        f"✨ <b>Butuh bantuan lebih lanjut?</b>"
+    )
+
+    kb = keyboards.main_menu()
+    await message.answer(text, reply_markup=kb, parse_mode="HTML")

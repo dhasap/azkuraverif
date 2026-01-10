@@ -1,5 +1,6 @@
 # YouTube Config
-from services.utils.universities import get_weighted_university, UNIVERSITIES
+from .universities import UNIVERSITIES
+import random
 
 # Program ID from working reference script
 PROGRAM_ID = '67c8c14f5f17a83b745e3f82'
@@ -13,4 +14,16 @@ DEFAULT_SCHOOL_ID = '2565'
 SCHOOLS = {str(u['id']): {**u, 'idExtended': str(u['id'])} for u in UNIVERSITIES}
 
 def get_random_school():
-    return get_weighted_university()
+    """Select a university based on weight"""
+    weights = [u["weight"] for u in UNIVERSITIES]
+    total = sum(weights)
+    r = random.uniform(0, total)
+    cumulative = 0
+    
+    for uni in UNIVERSITIES:
+        cumulative += uni["weight"]
+        if r <= cumulative:
+            return {**uni, "idExtended": str(uni["id"])}
+    
+    u = UNIVERSITIES[0]
+    return {**u, "idExtended": str(u["id"])}

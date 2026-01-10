@@ -24,20 +24,30 @@ async def show_profile(callback: types.CallbackQuery):
     ref_link = f"https://t.me/{bot_info.username}?start={user_id}"
 
     profile_text = (
-        f"👤 <b>KARTU PENGGUNA</b>\n"
-        f"━━━━━━━━━━━━━━━━\n"
-        f"🆔 <b>ID Akun:</b> <code>{user_data['telegram_id']}</code>\n"
-        f"🎩 <b>Nama:</b> {user_data['full_name']}\n"
-        f"💰 <b>Saldo:</b> <code>{user_data['balance']} Poin</code>\n"
-        f"📅 <b>Bergabung:</b> {user_data['created_at'].split(' ')[0]}\n"
-        f"━━━━━━━━━━━━━━━━\n\n"
+        f"👤 <b>PROFIL PENGGUNA LENGKAP</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🏷️ <b>Nama Lengkap:</b> {user_data['full_name']}\n"
+        f"🆔 <b>ID Telegram:</b> <code>{user_data['telegram_id']}</code>\n"
+        f"👤 <b>Username:</b> @{callback.from_user.username or 'Tidak Ada'}\n"
+        f"💰 <b>Saldo Poin:</b> <code>{user_data['balance']} Poin</code>\n"
+        f"📅 <b>Tanggal Bergabung:</b> {user_data['created_at'].split(' ')[0]}\n\n"
+        f"🎯 <b>Status:</b> {'Admin' if user_data.get('is_admin') else 'User Biasa'}\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"🏆 <b>PRESTASI & RANKING</b>\n"
+        f"   • Verifikasi Berhasil: Belum Tersedia\n"
+        f"   • Verifikasi Gagal: Belum Tersedia\n"
+        f"   • Referral Berhasil: Belum Tersedia\n\n"
         f"📢 <b>PROGRAM REFERRAL</b>\n"
-        f"Undang teman dan dapatkan <b>+{config.REFERRAL_REWARD} Poin</b> gratis!\n\n"
-        f"🔗 <b>Link Anda:</b>\n"
-        f"<code>{ref_link}</code>\n"
-        f"<i>(Klik link untuk menyalin)</i>"
+        f"   • Dapatkan <b>+{config.REFERRAL_REWARD} Poin</b> per pengguna baru\n"
+        f"   • Bagikan link referral Anda:\n"
+        f"   <code>{ref_link}</code>\n\n"
+        f"🔒 <b>PRIVASI & KEAMANAN</b>\n"
+        f"   • Data terlindungi\n"
+        f"   • Enkripsi aktif\n"
+        f"   • Privasi terjaga\n\n"
+        f"✨ <b>Opsi Profil:</b>"
     )
-    
+
     await callback.message.edit_text(profile_text, reply_markup=keyboards.profile_menu(), parse_mode="HTML")
     await callback.answer()
 
@@ -149,27 +159,89 @@ async def process_redeem_code(message: types.Message, state: FSMContext):
 async def show_history(callback: types.CallbackQuery):
     """Menampilkan riwayat transaksi (Verifikasi & Redeem)"""
     history = db.get_transaction_history(callback.from_user.id)
-    
+
     if not history:
         await callback.answer("Belum ada riwayat transaksi.", show_alert=True)
         return
 
     text = "📜 <b>RIWAYAT TRANSAKSI (10 Terakhir)</b>\n━━━━━━━━━━━━━━━━\n\n"
-    
+
     for item in history:
         # Format: [ICON] Tipe - Nama (Waktu)
         # Type: verify / redeem
         date_str = item['created_at'].split('.')[0] # Hapus microsecond
-        
+
         if item['type'] == 'verify':
             icon = "✅" if item['status'] == 'success' else "❌"
             desc = f"Verifikasi {item['description']}"
         else:
             icon = "💎" # Redeem
             desc = f"Redeem Voucher"
-            
+
         text += f"{icon} <b>{desc}</b>\n└ 📅 {date_str}\n\n"
-        
+
+    await callback.message.edit_text(text, reply_markup=keyboards.profile_menu(), parse_mode="HTML")
+    await callback.answer()
+
+@router.callback_query(F.data == "achievements")
+async def show_achievements(callback: types.CallbackQuery):
+    """Menampilkan prestasi dan ranking pengguna"""
+    text = (
+        f"🏆 <b>PRESTASI & RANKING</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"🎯 <b>Prestasi Anda:</b>\n"
+        f"   • Verifikasi Berhasil: 0\n"
+        f"   • Verifikasi Gagal: 0\n"
+        f"   • Referral Berhasil: 0\n"
+        f"   • Bonus Harian: 0\n\n"
+        f"🌟 <b>Pencapaian:</b>\n"
+        f"   • Pengguna Baru: ❌\n"
+        f"   • Verifikator Pro: ❌\n"
+        f"   • Master Referral: ❌\n"
+        f"   • Daily Streak: ❌\n\n"
+        f"📊 <b>Peringkat Global:</b>\n"
+        f"   • Peringkat: #0 dari 0 pengguna\n\n"
+        f"✨ <b>Cara Mendapatkan Prestasi:</b>\n"
+        f"   • Selesaikan verifikasi pertama\n"
+        f"   • Ajak teman menggunakan referral\n"
+        f"   • Klaim bonus harian\n"
+        f"   • Gunakan bot secara rutin\n\n"
+        f"🎁 <b>Hadiah Prestasi:</b>\n"
+        f"   • Bonus poin eksklusif\n"
+        f"   • Akses fitur premium\n"
+        f"   • Ranking khusus"
+    )
+
+    await callback.message.edit_text(text, reply_markup=keyboards.profile_menu(), parse_mode="HTML")
+    await callback.answer()
+
+@router.callback_query(F.data == "settings")
+async def show_settings(callback: types.CallbackQuery):
+    """Menampilkan pengaturan akun"""
+    text = (
+        f"⚙️ <b>PENGATURAN AKUN</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"🔔 <b>Notifikasi:</b>\n"
+        f"   • Status: Aktif\n"
+        f"   • Verifikasi: Diaktifkan\n"
+        f"   • Promosi: Diaktifkan\n\n"
+        f"🔄 <b>Auto-Claim:</b>\n"
+        f"   • Bonus Harian: Dinonaktifkan\n"
+        f"   • Referral Bonus: Diaktifkan\n\n"
+        f"💳 <b>Metode Pembayaran:</b>\n"
+        f"   • Default: Manual Transfer\n"
+        f"   • Alternatif: Kode Voucher\n\n"
+        f"🌐 <b>Bahasa:</b>\n"
+        f"   • Saat Ini: Indonesia\n\n"
+        f"🔒 <b>Privasi:</b>\n"
+        f"   • Mode Privasi: Standar\n"
+        f"   • Data Sharing: Diizinkan\n\n"
+        f"🔧 <b>Pengaturan Tambahan:</b>\n"
+        f"   • Backup Data: Tidak Aktif\n"
+        f"   • Export Riwayat: Tidak Tersedia\n\n"
+        f"✨ <b>Pengaturan akan segera diperbarui!</b>"
+    )
+
     await callback.message.edit_text(text, reply_markup=keyboards.profile_menu(), parse_mode="HTML")
     await callback.answer()
 
