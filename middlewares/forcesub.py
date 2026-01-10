@@ -59,7 +59,7 @@ class ForceSubMiddleware(BaseMiddleware):
                 return await handler(event, data)
 
         # --- Jika User Belum Join ---
-        
+
         # Siapkan Tombol
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📢 Join Channel Utama", url=config.FORCE_SUB_URL)],
@@ -72,13 +72,34 @@ class ForceSubMiddleware(BaseMiddleware):
         elif isinstance(event, types.CallbackQuery):
             # Khusus jika user klik tombol "Cek Status" (looping logic)
             if event.data == "check_subscription":
-                # Karena logic di atas sudah mengecek status, 
-                # jika kode sampai sini berarti user MASIH belum join.
-                await event.answer("❌ Anda belum bergabung ke channel!", show_alert=True)
+                # Hapus cache untuk user ini agar pengecekan dilakukan ulang
+                if user and user.id in self.cache:
+                    del self.cache[user.id]
+
+                # Coba cek ulang status keanggotaan
+                try:
+                    member = await event.bot.get_chat_member(chat_id=config.FORCE_SUB_CHANNEL, user_id=user.id)
+
+                    if member.status in ['member', 'administrator', 'creator']:
+                        # Jika sekarang user sudah join, simpan ke cache dan lanjutkan
+                        current_time = time.time()
+                        self.cache[user.id] = {'status': True, 'time': current_time}
+                        await event.message.delete()  # Hapus pesan force sub
+                        await event.answer("✅ Anda telah bergabung! Akses diberikan.", show_alert=False)
+
+                        # Panggil handler untuk melanjutkan proses
+                        return await handler(event, data)
+                    else:
+                        # Jika masih belum join, beri pesan
+                        await event.answer("❌ Anda belum bergabung ke channel!", show_alert=True)
+                except TelegramBadRequest:
+                    await event.answer("❌ Gagal memeriksa status, coba lagi nanti.", show_alert=True)
+                except Exception as e:
+                    await event.answer("❌ Terjadi kesalahan saat memeriksa status.", show_alert=True)
             else:
                 await event.answer("⚠️ Harap join channel dulu!", show_alert=True)
                 # Kirim pesan baru agar terlihat
                 await event.message.answer(config.FORCE_SUB_MESSAGE, reply_markup=keyboard, parse_mode="HTML")
-        
+
         # Stop eksekusi handler (User diblokir)
         return
