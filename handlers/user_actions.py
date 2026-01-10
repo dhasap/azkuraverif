@@ -14,9 +14,19 @@ class RedeemState(StatesGroup):
 @router.callback_query(F.data == "menu_profile")
 async def show_profile(callback: types.CallbackQuery):
     user_id = callback.from_user.id
+    username = callback.from_user.username
+    full_name = callback.from_user.first_name
+    if callback.from_user.last_name:
+        full_name += f" {callback.from_user.last_name}"
+
+    # Pastikan pengguna terdaftar di database
+    from helpers.user_helper import ensure_user_registered
+    ensure_user_registered(user_id, username, full_name)
+
+    # Ambil data pengguna setelah memastikan mereka terdaftar
     user_data = db.get_user(user_id)
     if not user_data:
-        await callback.answer("Error: Data user tidak ditemukan.", show_alert=True)
+        await callback.answer("Error: Gagal mengakses data pengguna setelah registrasi.", show_alert=True)
         return
 
     # Generate Referral Link
@@ -54,11 +64,21 @@ async def show_profile(callback: types.CallbackQuery):
 @router.callback_query(F.data == "action_checkin")
 async def process_checkin(callback: types.CallbackQuery):
     user_id = callback.from_user.id
+    username = callback.from_user.username
+    full_name = callback.from_user.first_name
+    if callback.from_user.last_name:
+        full_name += f" {callback.from_user.last_name}"
+
+    # Pastikan pengguna terdaftar di database
+    from helpers.user_helper import ensure_user_registered
+    ensure_user_registered(user_id, username, full_name)
+
+    # Ambil data pengguna setelah memastikan mereka terdaftar
     user = db.get_user(user_id)
 
-    # Cek apakah user ditemukan
+    # Cek apakah user ditemukan (seharusnya selalu ditemukan setelah registrasi)
     if not user:
-        await callback.answer("❌ Akun tidak ditemukan di database.", show_alert=True)
+        await callback.answer("❌ Gagal mengakses data pengguna setelah registrasi.", show_alert=True)
         return
 
     # Cek tanggal checkin terakhir

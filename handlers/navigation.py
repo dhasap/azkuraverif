@@ -93,11 +93,21 @@ async def nav_special_verification(message: types.Message):
 @router.message(F.text == "🎁 Daily Bonus")
 async def nav_daily_bonus(message: types.Message):
     user_id = message.from_user.id
+    username = message.from_user.username
+    full_name = message.from_user.first_name
+    if message.from_user.last_name:
+        full_name += f" {message.from_user.last_name}"
+
+    # Pastikan pengguna terdaftar di database
+    from helpers.user_helper import ensure_user_registered
+    ensure_user_registered(user_id, username, full_name)
+
+    # Ambil data pengguna setelah memastikan mereka terdaftar
     user = db.get_user(user_id)
 
-    # Cek apakah user ditemukan
+    # Cek apakah user ditemukan (seharusnya selalu ditemukan setelah registrasi)
     if not user:
-        await message.reply("❌ <b>ERROR:</b> Akun tidak ditemukan di database.", parse_mode="HTML")
+        await message.reply("❌ <b>ERROR:</b> Gagal mengakses data pengguna setelah registrasi.", parse_mode="HTML")
         return
 
     # Cek tanggal (Sama seperti user_actions.py)
