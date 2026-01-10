@@ -114,3 +114,6 @@ test_bot_functions.py
 
 # Init Qwen Code
 QWEN.md
+
+# Admin setup guide (contains sensitive info)
+ADMIN_SETUP.md
