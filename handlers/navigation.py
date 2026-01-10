@@ -48,7 +48,7 @@ async def nav_help(message: types.Message):
     await message.answer(text, parse_mode="HTML", disable_web_page_preview=True)
 
 @router.message(F.text == "🛠 Admin Panel")
-async def nav_admin(message: types.Message):
+async def nav_admin_old(message: types.Message):
     # Cek apakah user adalah admin
     user_id = message.from_user.id
     user_db = db.get_user(user_id)
@@ -60,6 +60,24 @@ async def nav_admin(message: types.Message):
 
     await message.answer(
         "🛠 <b>ADMIN DASHBOARD</b>\n\nSilakan pilih menu manajemen:",
+        reply_markup=keyboards.admin_dashboard_kb(),
+        parse_mode="HTML"
+    )
+
+
+@router.message(F.text == "🔐 Admin Panel")
+async def nav_admin_panel(message: types.Message):
+    # Cek apakah user adalah admin
+    user_id = message.from_user.id
+    user_db = db.get_user(user_id)
+    is_admin = (user_id in config.ADMIN_IDS) or (user_db and user_db.get('is_admin'))
+
+    if not is_admin:
+        await message.answer("❌ <b>ACCESS DENIED</b>\nAnda tidak memiliki akses ke panel admin.", parse_mode="HTML")
+        return
+
+    await message.answer(
+        "🔐 <b>ADMIN PANEL</b>\n\nSilakan pilih menu manajemen:",
         reply_markup=keyboards.admin_dashboard_kb(),
         parse_mode="HTML"
     )
