@@ -96,8 +96,14 @@ async def nav_daily_checkin(message: types.Message):
         full_name += f" {message.from_user.last_name}"
 
     # Pastikan pengguna terdaftar di database
-    from helpers.user_helper import ensure_user_registered
-    ensure_user_registered(user_id, username, full_name)
+    user_data = db.get_user(user_id)
+    if not user_data:
+        # Pengguna belum terdaftar, daftarkan mereka
+        is_new_user = db.create_user(user_id, username, full_name)
+        if is_new_user:
+            print(f"User {user_id} berhasil didaftarkan")
+        else:
+            print(f"Gagal mendaftarkan user {user_id}")
 
     # Ambil data pengguna setelah memastikan mereka terdaftar
     user = db.get_user(user_id)
@@ -161,8 +167,14 @@ async def nav_daily_bonus(message: types.Message):
         full_name += f" {message.from_user.last_name}"
 
     # Pastikan pengguna terdaftar di database
-    from helpers.user_helper import ensure_user_registered
-    ensure_user_registered(user_id, username, full_name)
+    user_data = db.get_user(user_id)
+    if not user_data:
+        # Pengguna belum terdaftar, daftarkan mereka
+        is_new_user = db.create_user(user_id, username, full_name)
+        if is_new_user:
+            print(f"User {user_id} berhasil didaftarkan")
+        else:
+            print(f"Gagal mendaftarkan user {user_id}")
 
     # Ambil data pengguna setelah memastikan mereka terdaftar
     user = db.get_user(user_id)
