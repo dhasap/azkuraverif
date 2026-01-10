@@ -89,10 +89,28 @@ local.db
 logs/
 bot.log
 
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
 # Exclude source code reference folder
 @source-code/
 
 source-code/
+
+# Scripts and test files that are not part of main codebase
+check_verification_consistency.py
+fix_database.py
+test_bot_functions.py
 
 # Init Qwen Code
 QWEN.md
