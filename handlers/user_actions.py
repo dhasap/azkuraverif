@@ -55,11 +55,16 @@ async def show_profile(callback: types.CallbackQuery):
 async def process_checkin(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     user = db.get_user(user_id)
-    
+
+    # Cek apakah user ditemukan
+    if not user:
+        await callback.answer("❌ Akun tidak ditemukan di database.", show_alert=True)
+        return
+
     # Cek tanggal checkin terakhir
     last_checkin_str = user.get('last_checkin')
     can_checkin = False
-    
+
     if not last_checkin_str:
         can_checkin = True
     else:
@@ -78,11 +83,11 @@ async def process_checkin(callback: types.CallbackQuery):
                 (config.CHECKIN_REWARD, user_id)
             )
             conn.commit()
-            
+
             await callback.answer(f"🎉 Check-in Sukses! +{config.CHECKIN_REWARD} Poin.", show_alert=True)
             # Refresh dengan pesan baru
             new_bal = user['balance'] + config.CHECKIN_REWARD
-            
+
             msg = (
                 f"✅ <b>CHECK-IN BERHASIL!</b>\n"
                 f"━━━━━━━━━━━━━━━━\n"
@@ -92,7 +97,7 @@ async def process_checkin(callback: types.CallbackQuery):
             )
             # Kita kirim pesan baru saja karena edit pesan menu utama agak tricky logicnya di sini
             await callback.message.answer(msg, parse_mode="HTML")
-            
+
         except Exception as e:
             await callback.answer(f"Gagal check-in: {e}", show_alert=True)
         finally:

@@ -223,10 +223,17 @@ async def process_url(message: types.Message, state: FSMContext):
     url = message.text.strip()
     data = await state.get_data()
     service_key = data['service']
-    
-    # Validasi URL (Basic)
-    if "http" not in url:
+
+    # Validasi URL (Lebih ketat)
+    if not url.startswith(('http://', 'https://')):
         await message.reply("❌ <b>Link Invalid!</b>\nHarus diawali dengan <code>http://</code> atau <code>https://</code>.", parse_mode="HTML")
+        return
+
+    # Validasi domain SheerID
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if 'sheerid.com' not in parsed.netloc.lower():
+        await message.reply("❌ <b>Domain Invalid!</b>\nLink harus berasal dari <code>sheerid.com</code>.", parse_mode="HTML")
         return
 
     # --- LOGIKA AUTO-DETECT (KHUSUS CHATGPT) ---

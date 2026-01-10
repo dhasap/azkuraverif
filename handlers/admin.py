@@ -151,7 +151,7 @@ async def cmd_broadcast(message: types.Message, command: CommandObject):
     """Broadcast pesan ke semua user. Reply ke pesan atau ketik pesan setelah command."""
     # Tentukan konten pesan
     msg_to_send = None
-    
+
     # Jika reply
     if message.reply_to_message:
         msg_to_send = message.reply_to_message
@@ -165,7 +165,7 @@ async def cmd_broadcast(message: types.Message, command: CommandObject):
             "Kirim pesan massal ke seluruh user.\n\n"
             "<b>Cara Pakai:</b>\n"
             "1. Reply pesan apapun dengan <code>/broadcast</code>\n"
-            "2. Atau ketik: <code>/broadcast Pesan Anda</code>", 
+            "2. Atau ketik: <code>/broadcast Pesan Anda</code>",
             parse_mode="HTML"
         )
         return
@@ -174,9 +174,9 @@ async def cmd_broadcast(message: types.Message, command: CommandObject):
     total = len(users)
     sent = 0
     blocked = 0
-    
+
     status_msg = await message.reply(f"⏳ <b>Sedang Mengirim...</b>\nTarget: {total} User", parse_mode="HTML")
-    
+
     for uid in users:
         try:
             if isinstance(msg_to_send, str):
@@ -184,13 +184,15 @@ async def cmd_broadcast(message: types.Message, command: CommandObject):
             else:
                 await msg_to_send.copy_to(uid)
             sent += 1
-        except Exception:
+        except Exception as e:
             blocked += 1
-        
+            # Log error jika perlu untuk debugging
+            print(f"Broadcast error to {uid}: {str(e)}")
+
         # Hindari flood limit
         if sent % 20 == 0:
             await asyncio.sleep(1)
-            
+
     await status_msg.edit_text(
         f"✅ <b>BROADCAST SELESAI</b>\n"
         f"━━━━━━━━━━━━━━━━\n"

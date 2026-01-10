@@ -86,6 +86,11 @@ async def nav_daily_bonus(message: types.Message):
     user_id = message.from_user.id
     user = db.get_user(user_id)
 
+    # Cek apakah user ditemukan
+    if not user:
+        await message.reply("❌ <b>ERROR:</b> Akun tidak ditemukan di database.", parse_mode="HTML")
+        return
+
     # Cek tanggal (Sama seperti user_actions.py)
     last_checkin_str = user.get('last_checkin')
     can_checkin = False

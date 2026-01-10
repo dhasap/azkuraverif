@@ -25,6 +25,9 @@ class TursoDatabase:
 
     def get_connection(self):
         """Membuka koneksi ke Turso"""
+        # Jika tidak ada URL atau token, gunakan database lokal
+        if not self.url or not self.token:
+            return libsql.connect(database="file:local.db")
         return libsql.connect(database=self.url, auth_token=self.token)
 
     def init_db(self):

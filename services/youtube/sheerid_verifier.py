@@ -195,17 +195,38 @@ class SheerIDVerifier:
     
     def __del__(self):
         if hasattr(self, "client"):
-            self.client.close()
-    
+            try:
+                self.client.close()
+            except:
+                pass
+
     @staticmethod
     def _parse_id(url: str) -> Optional[str]:
         match = re.search(r"verificationId=([a-f0-9]+)", url, re.IGNORECASE)
         return match.group(1) if match else None
-    
+
+    @staticmethod
+    def parse_verification_id(url: str) -> Optional[str]:
+        """Ekstrak verification ID dari URL"""
+        match = re.search(r"verificationId=([a-f0-9]+)", url, re.IGNORECASE)
+        if match:
+            return match.group(1)
+        return None
+
     @staticmethod
     def _parse_query_param(url: str, param: str) -> Optional[str]:
         match = re.search(f"{param}=([^&]+)", url, re.IGNORECASE)
         return match.group(1) if match else None
+
+    def _verify_sync(self, *args, **kwargs):
+        """Sync wrapper for async verification"""
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        return loop.run_until_complete(self._verify_async(*args, **kwargs))
     
     def _request(self, method: str, endpoint: str, body: Dict = None) -> Tuple[Dict, int]:
         random_delay()

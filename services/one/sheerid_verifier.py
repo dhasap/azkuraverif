@@ -25,6 +25,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from services.utils.universities import UNIVERSITIES
 from services.utils.anti_detect import get_headers, get_fingerprint, random_delay, create_session
+from services.utils.email_client import EmailClient
 
 logging.basicConfig(
     level=logging.INFO,

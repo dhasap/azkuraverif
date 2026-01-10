@@ -195,11 +195,19 @@ class SheerIDVerifier:
     def __del__(self):
         if hasattr(self, "client"):
             self.client.close()
-    
+
     @staticmethod
     def _parse_id(url: str) -> Optional[str]:
         match = re.search(r"verificationId=([a-f0-9]+)", url, re.IGNORECASE)
         return match.group(1) if match else None
+
+    @staticmethod
+    def parse_verification_id(url: str) -> Optional[str]:
+        """Ekstrak verification ID dari URL"""
+        match = re.search(r"verificationId=([a-f0-9]+)", url, re.IGNORECASE)
+        if match:
+            return match.group(1)
+        return None
     
     def _request(self, method: str, endpoint: str, body: Dict = None) -> Tuple[Dict, int]:
         random_delay()
