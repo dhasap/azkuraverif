@@ -70,18 +70,18 @@ async def nav_special_promo(message: types.Message):
     balance = user_data['balance'] if user_data else 0
 
     text = (
-        f"🎁 <b>PROMO SPESIAL HARI INI</b>\n"
+        f"🎁 <b>PROMO SPESIAL EKSKLUSIF</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"💰 <b>Saldo Anda:</b> {balance} Poin\n\n"
         f"🔥 <b>Penawaran Terbatas:</b>\n"
-        f"   • Diskon 50% untuk verifikasi militer\n"
+        f"   • Top Up 50 Poin hanya Rp 25.000 (Harga Normal Rp 50.000)\n"
         f"   • Bonus tambahan untuk referral\n"
-        f"   • Double poin harian (tertentu)\n\n"
+        f"   • Akses prioritas ke layanan verifikasi\n\n"
         f"🎯 <b>Keuntungan Promo:</b>\n"
-        f"   • Hemat biaya verifikasi\n"
+        f"   • Hemat hingga 50% biaya top up\n"
         f"   • Akses layanan eksklusif\n"
-        f"   • Proses prioritas\n\n"
-        f"⏰ <b>Promo berlangsung hingga pukul 23.59 atau kuota habis</b>\n\n"
+        f"   • Proses prioritas tanpa antrian\n\n"
+        f"⏰ <b>Promo berlangsung selama belum dihapus</b>\n\n"
         f"✨ <b>Manfaatkan promo sekarang juga!</b>"
     )
     kb = keyboards.main_menu()
