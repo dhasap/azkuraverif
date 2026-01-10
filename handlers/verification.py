@@ -343,12 +343,12 @@ async def proceed_to_confirm(message, state, service_key, verif_id):
     cost = SERVICES[service_key]['cost']
     user_data = db.get_user(message.from_user.id)
     
-    if user_data['balance'] < cost:
+    if not user_data or user_data.get('balance', 0) < cost:
         await message.answer(
             f"⚠️ <b>SALDO TIDAK CUKUP</b>\n"
             f"━━━━━━━━━━━━━━━━\n"
             f"💰 Biaya Layanan: <b>{cost} Poin</b>\n"
-            f"👛 Saldo Anda: <b>{user_data['balance']} Poin</b>\n\n"
+            f" purse Saldo Anda: <b>{user_data.get('balance', 0)} Poin</b>\n\n"
             "💡 <i>Solusi: Lakukan Check-in harian atau Topup saldo.</i>",
             reply_markup=keyboards.back_home(),
             parse_mode="HTML"

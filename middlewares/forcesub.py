@@ -32,7 +32,7 @@ class ForceSubMiddleware(BaseMiddleware):
         # Cek Cache
         current_time = time.time()
         cached_data = self.cache.get(user.id)
-        
+
         if cached_data and (current_time - cached_data['time'] < self.TTL):
             if cached_data['status']:
                 return await handler(event, data)
@@ -41,14 +41,14 @@ class ForceSubMiddleware(BaseMiddleware):
             # Jika tidak ada di cache atau expired, Cek ke Telegram API
             try:
                 member = await event.bot.get_chat_member(chat_id=config.FORCE_SUB_CHANNEL, user_id=user.id)
-                
+
                 # Status yang diizinkan
                 if member.status in ['member', 'administrator', 'creator']:
                     self.cache[user.id] = {'status': True, 'time': current_time}
                     return await handler(event, data)
                 else:
                     self.cache[user.id] = {'status': False, 'time': current_time}
-            
+
             except TelegramBadRequest:
                 # Jika bot bukan admin di channel atau channel tidak ketemu
                 print(f"Error: Bot belum jadi admin di channel {config.FORCE_SUB_CHANNEL}")
