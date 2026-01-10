@@ -94,7 +94,7 @@ class EmailClient:
                 # Look for link containing verificationId and emailToken
                 # Regex matches: https://services.sheerid.com/verify/...emailToken=...
                 # It should also match the verification_id
-                match = re.search(r"https://services\.sheerid\.com/verify/[^\s"'<>]+emailToken=\d+", content)
+                match = re.search(r"https://services\.sheerid\.com/verify/[^\s<>\"']+emailToken=\d+", content)
                 if match:
                     link = match.group(0).replace("&amp;", "&")
                     if verification_id in link:

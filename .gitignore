@@ -75,6 +75,19 @@ Thumbs.db
 *.swp
 test_*.png
 test_*.pdf
+tmp/
+
+# Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+local.db
+
+# Logs
+*.log
+logs/
+bot.log
 
 # Exclude source code reference folder
 @source-code/
