@@ -4,9 +4,9 @@ import config
 def get_main_keyboard(is_admin: bool = False) -> ReplyKeyboardMarkup:
     """Menu Navigasi Bawah (Persistent) - Desain Elegan"""
     kb = [
-        [KeyboardButton(text="✨ Layanan Premium"), KeyboardButton(text="🎯 Verifikasi Spesial")],
-        [KeyboardButton(text="👤 Profil Saya"), KeyboardButton(text="🎁 Daily Bonus")],
-        [KeyboardButton(text="💎 Manajemen Poin"), KeyboardButton(text="ℹ️ Informasi")]
+        [KeyboardButton(text="🚀 Layanan Verifikasi"), KeyboardButton(text="🎁 Promo Spesial")],
+        [KeyboardButton(text="👤 Profil Saya"), KeyboardButton(text="📅 Daily Check-in")],
+        [KeyboardButton(text="💎 Topup Poin"), KeyboardButton(text="❓ Bantuan")]
     ]
 
     if is_admin:

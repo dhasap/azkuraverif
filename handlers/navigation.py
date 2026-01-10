@@ -64,31 +64,93 @@ async def nav_admin(message: types.Message):
         parse_mode="HTML"
     )
 
-@router.message(F.text == "🎯 Verifikasi Spesial")
-async def nav_special_verification(message: types.Message):
+@router.message(F.text == "🎁 Promo Spesial")
+async def nav_special_promo(message: types.Message):
     user_data = db.get_user(message.from_user.id)
     balance = user_data['balance'] if user_data else 0
 
     text = (
-        f"🎯 <b>VERIFIKASI SPESIAL</b>\n"
+        f"🎁 <b>PROMO SPESIAL HARI INI</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"💰 <b>Saldo Anda:</b> {balance} Poin\n\n"
-        f"✨ <b>Layanan Premium:</b>\n"
-        f"   • Military/Veteran Verification\n"
-        f"   • K12 Teacher Verification\n"
-        f"   • ChatGPT Education\n\n"
-        f"🎯 <b>Fitur Unggulan:</b>\n"
-        f"   • Proses otomatis maksimal\n"
-        f"   • Data valid terotentikasi\n"
-        f"   • Kecepatan maksimum\n\n"
-        f"🔒 <b>Keamanan:</b>\n"
-        f"   • Enkripsi data maksimum\n"
-        f"   • Proteksi identitas\n"
-        f"   • Privasi terjamin\n\n"
-        f"✨ <b>Pilih layanan spesial di bawah ini:</b>"
+        f"🔥 <b>Penawaran Terbatas:</b>\n"
+        f"   • Diskon 50% untuk verifikasi militer\n"
+        f"   • Bonus tambahan untuk referral\n"
+        f"   • Double poin harian (tertentu)\n\n"
+        f"🎯 <b>Keuntungan Promo:</b>\n"
+        f"   • Hemat biaya verifikasi\n"
+        f"   • Akses layanan eksklusif\n"
+        f"   • Proses prioritas\n\n"
+        f"⏰ <b>Promo berlangsung hingga pukul 23.59 atau kuota habis</b>\n\n"
+        f"✨ <b>Manfaatkan promo sekarang juga!</b>"
     )
-    kb = keyboards.military_services()
+    kb = keyboards.main_menu()
     await message.answer(text, reply_markup=kb, parse_mode="HTML")
+
+@router.message(F.text == "📅 Daily Check-in")
+async def nav_daily_checkin(message: types.Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    full_name = message.from_user.first_name
+    if message.from_user.last_name:
+        full_name += f" {message.from_user.last_name}"
+
+    # Pastikan pengguna terdaftar di database
+    from helpers.user_helper import ensure_user_registered
+    ensure_user_registered(user_id, username, full_name)
+
+    # Ambil data pengguna setelah memastikan mereka terdaftar
+    user = db.get_user(user_id)
+
+    # Cek apakah user ditemukan (seharusnya selalu ditemukan setelah registrasi)
+    if not user:
+        await message.reply("❌ <b>ERROR:</b> Gagal mengakses data pengguna setelah registrasi.", parse_mode="HTML")
+        return
+
+    # Cek tanggal (Sama seperti user_actions.py)
+    last_checkin_str = user.get('last_checkin')
+    can_checkin = False
+
+    from datetime import datetime
+    if not last_checkin_str:
+        can_checkin = True
+    else:
+        try:
+            last_date = datetime.fromisoformat(last_checkin_str).date() if 'T' in last_checkin_str else datetime.strptime(last_checkin_str.split('.')[0], "%Y-%m-%d %H:%M:%S").date()
+            if last_date < datetime.now().date():
+                can_checkin = True
+        except Exception:
+            can_checkin = True
+
+    if can_checkin:
+        conn = db.get_connection()
+        try:
+            conn.execute(
+                "UPDATE users SET balance = balance + ?, last_checkin = CURRENT_TIMESTAMP WHERE telegram_id = ?",
+                (config.CHECKIN_REWARD, user_id)
+            )
+            conn.commit()
+
+            new_bal = user['balance'] + config.CHECKIN_REWARD
+            msg = (
+                f"🎁 <b>DAILY CHECK-IN BERHASIL!</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🎉 Selamat! Bonus harian telah ditambahkan.\n"
+                f"💰 Saldo Baru: <b>{new_bal} Poin</b>\n\n"
+                f"✨ <b>Keuntungan Check-in Harian:</b>\n"
+                f"   • Gratis setiap hari\n"
+                f"   • Tidak ada batas klaim\n"
+                f"   • Tambah saldo Anda\n\n"
+                f"⏰ <b>Ingat:</b> Kembali besok untuk klaim bonus baru!"
+            )
+            await message.reply(msg, parse_mode="HTML")
+        except Exception as e:
+            await message.reply(f"❌ <b>Error:</b> {e}", parse_mode="HTML")
+        finally:
+            conn.close()
+    else:
+        await message.reply("⏳ <b>MOHON TUNGGU</b>\n\nAnda sudah check-in hari ini.\n\n⏰ <b>Waktu tersisa:</b> Klaim kembali besok!", parse_mode="HTML")
+
 
 @router.message(F.text == "🎁 Daily Bonus")
 async def nav_daily_bonus(message: types.Message):
