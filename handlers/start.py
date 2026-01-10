@@ -227,3 +227,45 @@ async def show_help(message: types.Message):
 
     kb = keyboards.main_menu()
     await message.answer(text, reply_markup=kb, parse_mode="HTML")
+
+@router.callback_query(F.data == "menu_help")
+async def callback_help(callback: types.CallbackQuery):
+    text = (
+        "❓ <b>PUSAT BANTUAN & PANDUAN</b>\n"
+        "━━━━━━━━━━━━━━━━\n\n"
+        "📘 <b>Cara Menggunakan Bot:</b>\n"
+        "1. Pilih menu <b>🚀 Layanan Verifikasi</b>.\n"
+        "2. Pilih jenis layanan (misal: Spotify).\n"
+        "3. Dapatkan link verifikasi dari website resmi layanan (SheerID).\n"
+        "4. Kirim link tersebut ke bot ini.\n"
+        "5. Tunggu proses verifikasi selesai otomatis.\n\n"
+        "📙 <b>Pertanyaan Umum (FAQ):</b>\n"
+        "• <b>Saldo habis?</b> Lakukan Check-in harian atau Topup.\n"
+        "• <b>Verifikasi gagal?</b> Poin otomatis dikembalikan.\n"
+        "• <b>Undang teman?</b> Gunakan link di menu Profil.\n\n"
+        f"📞 <b>Butuh Bantuan Lebih Lanjut?</b>\n"
+        f"Hubungi: {config.SUPPORT_URL}\n"
+        f"Channel Info: {config.CHANNEL_URL}"
+    )
+    await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True)
+@router.callback_query(F.data == "menu_help")
+async def callback_help(callback: types.CallbackQuery):
+    text = (
+        "❓ <b>PUSAT BANTUAN & PANDUAN</b>\n"
+        "━━━━━━━━━━━━━━━━\n\n"
+        "📘 <b>Cara Menggunakan Bot:</b>\n"
+        "1. Pilih menu <b>🚀 Layanan Verifikasi</b>.\n"
+        "2. Pilih jenis layanan (misal: Spotify).\n"
+        "3. Dapatkan link verifikasi dari website resmi layanan (SheerID).\n"
+        "4. Kirim link tersebut ke bot ini.\n"
+        "5. Tunggu proses verifikasi selesai otomatis.\n\n"
+        "📙 <b>Pertanyaan Umum (FAQ):</b>\n"
+        "• <b>Saldo habis?</b> Lakukan Check-in harian atau Topup.\n"
+        "• <b>Verifikasi gagal?</b> Poin otomatis dikembalikan.\n"
+        "• <b>Undang teman?</b> Gunakan link di menu Profil.\n\n"
+        f"📞 <b>Butuh Bantuan Lebih Lanjut?</b>\n"
+        f"Hubungi: {config.SUPPORT_URL}\n"
+        f"Channel Info: {config.CHANNEL_URL}"
+    )
+    await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True)
+    await callback.answer()
