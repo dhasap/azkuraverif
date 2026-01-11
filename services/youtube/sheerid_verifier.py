@@ -202,16 +202,24 @@ class SheerIDVerifier:
 
     @staticmethod
     def _parse_id(url: str) -> Optional[str]:
+        # Coba ekstrak dari verificationId terlebih dahulu
         match = re.search(r"verificationId=([a-f0-9]+)", url, re.IGNORECASE)
+        if match:
+            return match.group(1)
+        # Jika tidak ditemukan, coba ekstrak dari oid (untuk URL kompleks YouTube)
+        match = re.search(r'oid=([A-Za-z0-9_-]+)', url)
         return match.group(1) if match else None
 
     @staticmethod
     def parse_verification_id(url: str) -> Optional[str]:
         """Ekstrak verification ID dari URL"""
+        # Coba ekstrak dari verificationId terlebih dahulu
         match = re.search(r"verificationId=([a-f0-9]+)", url, re.IGNORECASE)
         if match:
             return match.group(1)
-        return None
+        # Jika tidak ditemukan, coba ekstrak dari oid (untuk URL kompleks YouTube)
+        match = re.search(r'oid=([A-Za-z0-9_-]+)', url)
+        return match.group(1) if match else None
 
     @staticmethod
     def _parse_query_param(url: str, param: str) -> Optional[str]:
