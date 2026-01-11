@@ -337,14 +337,25 @@ class SheerIDVerifier:
         email_config: Dict = None,
     ) -> Dict:
         """Run full verification"""
-        # Jika tidak ada vid, kita bisa membuat sesi baru dari URL
-        if not self.vid:
-            # Membuat sesi verifikasi baru dari URL penawaran
+        # Jika tidak ada vid atau jika vid yang diekstrak tidak valid (menghasilkan 404),
+        # buat sesi verifikasi baru dari URL penawaran
+        if self.vid:
+            # Cek apakah ID verifikasi yang diekstrak valid
+            check_data, check_status = self._request("GET", f"/verification/{self.vid}")
+            if check_status == 404:
+                # ID tidak valid, buat sesi baru dari URL
+                logger.info("Verification ID not found, creating new session from URL")
+                verification_id = await self._create_verification_session()
+                if not verification_id:
+                    return {"success": False, "message": "Could not create verification session from URL"}
+                self.vid = verification_id
+        else:
+            # Tidak ada ID, buat sesi baru dari URL
             verification_id = await self._create_verification_session()
             if not verification_id:
                 return {"success": False, "message": "Could not create verification session from URL"}
             self.vid = verification_id
-        
+
         email_client = None
         try:
             check_data, check_status = self._request("GET", f"/verification/{self.vid}")
