@@ -19,6 +19,17 @@ from .data_generator import (
 )
 
 
+def cached_document_creation(func):
+    """
+    Decorator to cache document creation results.
+    Currently implemented as a pass-through to fix NameError.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+
 @cached_document_creation
 def create_transcript_document(data=None, width=800, height=1000):
     """
