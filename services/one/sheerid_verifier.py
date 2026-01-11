@@ -274,6 +274,9 @@ class SheerIDVerifier:
     
     @staticmethod
     def _parse_id(url: str) -> Optional[str]:
+        # Handle raw ID (24 hex chars)
+        if re.match(r"^[a-f0-9]{24}$", url, re.IGNORECASE):
+            return url
         match = re.search(r"verificationId=([a-f0-9]+)", url, re.IGNORECASE)
         return match.group(1) if match else None
     
@@ -375,9 +378,6 @@ class SheerIDVerifier:
             logger.info(f"Student: {first_name} {last_name}")
             logger.info(f"Email: {email}")
             logger.info(f"School: {self.org['name']}")
-            logger.info(f"DOB: {birth_date}")
-            logger.info(f"ID: {self.vid[:20]}...")
-            logger.info(f"Starting step: {current_step}")
             
             doc_type = "transcript" if random.random() < 0.7 else "id_card"
             if doc_type == "transcript":

@@ -417,7 +417,7 @@ async def execute_verification(callback: types.CallbackQuery, state: FSMContext)
             if VerifierClass == BoltVerifier:
                  verifier = VerifierClass(original_url, verification_id=verif_id)
         else:
-            verifier = VerifierClass(verif_id)
+            verifier = VerifierClass(original_url)
 
         # Kirim Proxy khusus Perplexity jika ada di config
         verify_kwargs = {**custom_inputs}

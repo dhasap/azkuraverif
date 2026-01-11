@@ -30,8 +30,13 @@ logger = logging.getLogger(__name__)
 class SheerIDVerifier:
     """SheerID Military Verifier"""
 
-    def __init__(self, verification_id: str):
-        self.verification_id = verification_id
+    def __init__(self, url_or_id: str):
+        parsed = self.parse_verification_id(url_or_id)
+        if parsed:
+            self.verification_id = parsed
+        else:
+            self.verification_id = url_or_id
+            
         self.device_fingerprint = self.generate_fingerprint()
 
     def generate_fingerprint(self):

@@ -112,8 +112,9 @@ check_verification_consistency.py
 fix_database.py
 test_bot_functions.py
 
-# Init Qwen Code
+# Init Qwen Code & Gemini Code
 QWEN.md
+GEMINI.md
 
 # Admin setup guide (contains sensitive info)
 ADMIN_SETUP.md

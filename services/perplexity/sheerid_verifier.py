@@ -133,6 +133,9 @@ class SheerIDVerifier:
     
     @staticmethod
     def _parse_id(url: str) -> Optional[str]:
+        # Handle raw ID (24 hex chars)
+        if re.match(r"^[a-f0-9]{24}$", url, re.IGNORECASE):
+            return url
         match = re.search(r"verificationId=([a-f0-9]+)", url, re.IGNORECASE)
         if match:
             return match.group(1)
