@@ -425,11 +425,11 @@ async def execute_verification(callback: types.CallbackQuery, state: FSMContext)
         VerifierClass = SERVICES[service_key]['verifier']
         # YouTube dan Bolt butuh URL asli untuk auto-session / parsing parameter
         if VerifierClass in [BoltVerifier, YouTubeVerifier]:
-            verifier = VerifierClass(original_url)
-            # BoltVerifier might accept verification_id separately, but YouTubeVerifier now takes url in __init__
-            # To be safe for Bolt legacy signature:
-            if VerifierClass == BoltVerifier:
-                 verifier = VerifierClass(original_url, verification_id=verif_id)
+            # BoltVerifier dan YouTubeVerifier bisa menerima verification_id secara opsional
+            if verif_id:
+                verifier = VerifierClass(original_url, verification_id=verif_id)
+            else:
+                verifier = VerifierClass(original_url)
         else:
             verifier = VerifierClass(original_url)
 

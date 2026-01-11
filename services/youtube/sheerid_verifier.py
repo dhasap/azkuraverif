@@ -185,9 +185,11 @@ def generate_student_id(first: str, last: str, school: str) -> bytes:
 class SheerIDVerifier:
     """YouTube Student Verification with enhanced features"""
     
-    def __init__(self, url: str, proxy: str = None):
+    def __init__(self, url: str, verification_id: str = None, proxy: str = None):
         self.url = url
-        self.vid = self._parse_id(url)
+        # Jika verification_id diberikan secara eksplisit, gunakan itu
+        # Jika tidak, coba ekstrak dari URL
+        self.vid = verification_id or self._parse_id(url)
         self.fingerprint = get_fingerprint()
         self.client, self.lib_name = create_session(proxy)
         self.org = None
@@ -225,6 +227,34 @@ class SheerIDVerifier:
     def _parse_query_param(url: str, param: str) -> Optional[str]:
         match = re.search(f"{param}=([^&]+)", url, re.IGNORECASE)
         return match.group(1) if match else None
+
+    async def _create_verification_session(self) -> Optional[str]:
+        """Membuat sesi verifikasi baru dari URL penawaran"""
+        try:
+            # Membuat sesi verifikasi baru dari URL penawaran
+            headers = get_headers(for_sheerid=True)
+            body = {
+                "programId": PROGRAM_ID,
+                "installPageUrl": self.url,
+            }
+
+            # Karena ini fungsi async, kita perlu membuat request async
+            # Tapi karena kita menggunakan httpx client sync, kita panggil sync
+            response = self.client.post(
+                "https://services.sheerid.com/rest/v2/verification/",
+                json=body,
+                headers=headers
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                return data.get("verificationId")
+            else:
+                logger.error(f"Failed to create verification session: {response.status_code}")
+                return None
+        except Exception as e:
+            logger.error(f"Exception while creating verification session: {e}")
+            return None
 
     def _verify_sync(self, *args, **kwargs):
         """Sync wrapper for async verification"""
@@ -307,8 +337,13 @@ class SheerIDVerifier:
         email_config: Dict = None,
     ) -> Dict:
         """Run full verification"""
+        # Jika tidak ada vid, kita bisa membuat sesi baru dari URL
         if not self.vid:
-            return {"success": False, "message": "Invalid verification URL"}
+            # Membuat sesi verifikasi baru dari URL penawaran
+            verification_id = await self._create_verification_session()
+            if not verification_id:
+                return {"success": False, "message": "Could not create verification session from URL"}
+            self.vid = verification_id
         
         email_client = None
         try:
