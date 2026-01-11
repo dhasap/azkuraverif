@@ -81,10 +81,35 @@ class Stats:
 stats = Stats()
 
 
-def select_university() -> Dict:
+def select_university(locale: str = None) -> Dict:
     """Weighted random selection based on success rates"""
+    candidates = UNIVERSITIES
+    
+    # Filter by locale if provided
+    if locale:
+        loc = locale.lower()
+        suffix = None
+        if loc == 'id' or 'id-' in loc: suffix = '.id'
+        elif loc == 'vi' or 'vn' in loc: suffix = '.vn'
+        elif loc == 'th': suffix = '.th'
+        elif loc == 'ph' or 'fil' in loc: suffix = '.ph'
+        elif loc == 'in' or 'hi' in loc: suffix = '.in'
+        elif loc == 'jp' or 'ja' in loc: suffix = '.jp'
+        elif loc == 'kr' or 'ko' in loc: suffix = '.kr'
+        elif loc == 'br' or 'pt' in loc: suffix = '.br'
+        elif 'au' in loc: suffix = '.au'
+        elif 'gb' in loc or 'uk' in loc: suffix = '.uk'
+        elif 'ca' in loc: suffix = '.ca'
+        elif 'de' in loc: suffix = '.de'
+        elif 'sg' in loc: suffix = '.sg'
+        
+        if suffix:
+            filtered = [u for u in candidates if u['domain'].endswith(suffix)]
+            if filtered:
+                candidates = filtered
+
     weights = []
-    for uni in UNIVERSITIES:
+    for uni in candidates:
         weight = uni["weight"] * (stats.get_rate(uni["name"]) / 50)
         weights.append(max(1, weight))
     
@@ -92,11 +117,11 @@ def select_university() -> Dict:
     r = random.uniform(0, total)
     
     cumulative = 0
-    for uni, weight in zip(UNIVERSITIES, weights):
+    for uni, weight in zip(candidates, weights):
         cumulative += weight
         if r <= cumulative:
             return {**uni, "idExtended": str(uni["id"])}
-    return {**UNIVERSITIES[0], "idExtended": str(UNIVERSITIES[0]["id"])}
+    return {**candidates[0], "idExtended": str(candidates[0]["id"])}
 
 
 # ============ UTILITIES ============
@@ -371,7 +396,7 @@ class SheerIDVerifier:
                     self.org = {**self.org, "idExtended": str(self.org["id"])}
             
             if not self.org:
-                self.org = select_university()
+                self.org = select_university(self.locale)
             
             if email_config and email_config.get("email_address"):
                 email = email_config.get("email_address")
