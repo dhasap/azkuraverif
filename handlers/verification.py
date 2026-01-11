@@ -275,6 +275,9 @@ async def process_url(message: types.Message, state: FSMContext):
     if not verif_id and VerifierClass not in [BoltVerifier, YouTubeVerifier]:
         await message.reply("❌ <b>Gagal membaca ID Verifikasi.</b>\nPastikan Anda menyalin link lengkap dari halaman SheerID.", parse_mode="HTML")
         return
+    elif not verif_id and VerifierClass in [BoltVerifier, YouTubeVerifier]:
+        # Untuk YouTube dan Bolt, verif_id bisa None karena akan dibuat otomatis dari URL
+        pass
         
     await state.update_data(verification_id=verif_id, original_url=url)
 
