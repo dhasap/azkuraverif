@@ -194,6 +194,7 @@ class SheerIDVerifier:
         self.client, self.lib_name = create_session(proxy)
         self.org = None
         self.external_user_id = self._parse_query_param(url, "euid")
+        self.locale = self._parse_query_param(url, "locale") or "en-US"
     
     def __del__(self):
         if hasattr(self, "client"):
@@ -404,7 +405,7 @@ class SheerIDVerifier:
                     "organization": {"id": self.org["id"], "idExtended": self.org["idExtended"],
                                     "name": self.org["name"]},
                     "deviceFingerprintHash": self.fingerprint,
-                    "locale": "en-US",
+                    "locale": self.locale,
                     "metadata": {
                         "marketConsentValue": False,
                         "verificationId": self.vid,
@@ -433,7 +434,7 @@ class SheerIDVerifier:
                             "organization": {"id": self.org["id"], "idExtended": self.org["idExtended"],
                                             "name": self.org["name"]},
                             "deviceFingerprintHash": self.fingerprint,
-                            "locale": "en-US"
+                            "locale": self.locale
                         }
                         
                         if self.external_user_id:
