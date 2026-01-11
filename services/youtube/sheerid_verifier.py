@@ -413,6 +413,11 @@ class SheerIDVerifier:
                         "submissionOptIn": "By submitting the personal information above, I acknowledge that my personal information is being collected under the privacy policy of the business from which I am seeking a discount"
                     }
                 }
+                
+                # Add externalUserId if present
+                if self.external_user_id:
+                    body["externalUserId"] = self.external_user_id
+                    body["metadata"]["externalUserId"] = self.external_user_id
 
                 data, status = self._request("POST", f"/verification/{self.vid}/step/collectStudentPersonalInfo", body)
 
@@ -430,6 +435,9 @@ class SheerIDVerifier:
                             "deviceFingerprintHash": self.fingerprint,
                             "locale": "en-US"
                         }
+                        
+                        if self.external_user_id:
+                            body_retry["externalUserId"] = self.external_user_id
 
                         data, status = self._request("POST", f"/verification/{self.vid}/step/collectStudentPersonalInfo", body_retry)
 
