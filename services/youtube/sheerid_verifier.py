@@ -283,6 +283,15 @@ class SheerIDVerifier:
                 if 'externalUserId' not in body:
                     body["externalUserId"] = params['oid'][0]
 
+            # Karena kita mendapatkan 400 Bad Request, coba dengan struktur data yang lebih lengkap
+            # seperti yang biasanya digunakan dalam metadata
+            metadata = {
+                "flags": '{"collect-info-step-email-first":"default","doc-upload-considerations":"default","doc-upload-may24":"default","doc-upload-redesign-use-legacy-message-keys":false,"docUpload-assertion-checklist":"default","font-size":"default","include-cvec-field-france-student":"not-labeled-optional"}',
+                "submissionOptIn": "By submitting the personal information above, I acknowledge that my personal information is being collected under the privacy policy of the business from which I am seeking a discount"
+            }
+
+            body["metadata"] = metadata
+
             # Karena ini fungsi async, kita perlu membuat request async
             # Tapi karena kita menggunakan httpx client sync, kita panggil sync
             response = self.client.post(
