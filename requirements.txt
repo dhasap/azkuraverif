@@ -18,6 +18,9 @@ xhtml2pdf>=0.2.15
 # Browser Automation (PENTING untuk sistem baru)
 playwright>=1.40.0
 
+# Data Generation
+Faker>=18.0.0
+
 # System
 python-dotenv>=1.0.0
 httpx-socks

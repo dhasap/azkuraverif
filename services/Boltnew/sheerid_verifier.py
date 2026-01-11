@@ -136,48 +136,26 @@ def generate_birth_date() -> str:
     return f"{year}-{month:02d}-{day:02d}"
 
 
+# ============ IMPORT DOKUMEN GENERATOR ============
+from services.utils.document_generator import create_employment_letter_document, create_salary_statement_document, create_teaching_certificate_document
+from services.utils.data_generator import generate_teacher_data
+
 # ============ IMAGE GENERATOR ============
 def generate_teacher_document(first: str, last: str, school: str) -> bytes:
-    """Generate fake teacher certificate PNG"""
-    width, height = 800, 500
-    img = Image.new("RGB", (width, height), color=(255, 255, 255))
-    draw = ImageDraw.Draw(img)
-    
-    try:
-        title_font = ImageFont.truetype("arial.ttf", 32)
-        text_font = ImageFont.truetype("arial.ttf", 24)
-        small_font = ImageFont.truetype("arial.ttf", 18)
-    except:
-        title_font = text_font = small_font = ImageFont.load_default()
-    
-    draw.rectangle([(20, 20), (width-20, height-20)], outline=(0, 51, 102), width=3)
-    
-    title = "FACULTY EMPLOYMENT VERIFICATION"
-    draw.text((width//2, 60), title, fill=(0, 51, 102), font=title_font, anchor="mm")
-    
-    draw.line([(50, 100), (width-50, 100)], fill=(0, 51, 102), width=2)
-    
-    draw.text((width//2, 140), school, fill=(51, 51, 51), font=text_font, anchor="mm")
-    
-    y = 200
-    info_lines = [
-        f"Employee Name: {first} {last}",
-        f"Position: Faculty Member",
-        f"Department: Education",
-        f"Employment Status: Active",
-        f"Issue Date: {time.strftime('%B %d, %Y')}"
-    ]
-    
-    for line in info_lines:
-        draw.text((100, y), line, fill=(51, 51, 51), font=text_font)
-        y += 40
-    
-    draw.text((width//2, height-60), "This document verifies current employment status.", 
-              fill=(128, 128, 128), font=small_font, anchor="mm")
-    
-    buffer = BytesIO()
-    img.save(buffer, format="PNG")
-    return buffer.getvalue()
+    """Generate fake teacher certificate using azkuraidgen generator"""
+    # Generate teacher data
+    data = generate_teacher_data()
+    # Update the data with the specific information provided
+    data.update({
+        "teacher_first_name": first,
+        "teacher_last_name": last,
+        "teacher_name": f"{last}, {first}",
+        "university_name": school,
+    })
+
+    # Create employment letter document using azkuraidgen generator
+    img_buffer = create_employment_letter_document(data)
+    return img_buffer.getvalue()
 
 
 # ============ VERIFIER ============
@@ -231,9 +209,17 @@ class SheerIDVerifier:
     
     def _upload_s3(self, url: str, data: bytes) -> bool:
         try:
-            resp = self.client.put(url, content=data, headers={"Content-Type": "image/png"}, timeout=60)
+            # Menambahkan beberapa header tambahan untuk meningkatkan kemungkinan keberhasilan upload
+            headers = {
+                "Content-Type": "image/png",
+                "Content-Length": str(len(data)),
+                "Connection": "keep-alive",
+                "Accept": "*/*",
+            }
+            resp = self.client.put(url, content=data, headers=headers, timeout=60)
             return 200 <= resp.status_code < 300
-        except:
+        except Exception as e:
+            logger.error(f"Upload failed: {e}")
             return False
     
     def _create_verification(self) -> str:

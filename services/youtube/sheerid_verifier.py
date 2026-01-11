@@ -168,42 +168,23 @@ def generate_birth_date() -> str:
 
 
 # ============ DOCUMENT GENERATOR ============
+# Impor fungsi dari modul baru
+from services.utils.document_generator import create_student_id_front, create_student_id_back, create_transcript_document, create_tuition_document
+from services.utils.data_generator import generate_random_data
+
 def generate_student_id(first: str, last: str, school: str) -> bytes:
-    """Generate fake student ID card"""
-    w, h = 650, 400
-    img = Image.new("RGB", (w, h), (255, 255, 255))
-    draw = ImageDraw.Draw(img)
-    
-    try:
-        font_lg = ImageFont.truetype("arial.ttf", 24)
-        font_md = ImageFont.truetype("arial.ttf", 18)
-        font_sm = ImageFont.truetype("arial.ttf", 14)
-    except:
-        font_lg = font_md = font_sm = ImageFont.load_default()
-    
-    draw.rectangle([(0, 0), (w, 60)], fill=(0, 51, 102))
-    draw.text((w//2, 30), "STUDENT IDENTIFICATION CARD", fill=(255, 255, 255), font=font_lg, anchor="mm")
-    draw.text((w//2, 90), school[:50], fill=(0, 51, 102), font=font_md, anchor="mm")
-    draw.rectangle([(30, 120), (150, 280)], outline=(180, 180, 180), width=2)
-    draw.text((90, 200), "PHOTO", fill=(180, 180, 180), font=font_md, anchor="mm")
-    
-    student_id = f"STU{random.randint(100000, 999999)}"
-    y = 130
-    for line in [f"Name: {first} {last}", f"ID: {student_id}", "Status: Full-time Student",
-                 "Major: Computer Science", f"Valid: {time.strftime('%Y')}-{int(time.strftime('%Y'))+1}"]:
-        draw.text((175, y), line, fill=(51, 51, 51), font=font_md)
-        y += 28
-    
-    draw.rectangle([(0, h-40), (w, h)], fill=(0, 51, 102))
-    draw.text((w//2, h-20), "Property of University", fill=(255, 255, 255), font=font_sm, anchor="mm")
-    
-    for i in range(20):
-        x = 480 + i * 7
-        draw.rectangle([(x, 280), (x+3, 280+random.randint(30, 50))], fill=(0, 0, 0))
-    
-    buf = BytesIO()
-    img.save(buf, format="PNG")
-    return buf.getvalue()
+    """Generate fake student ID card using the new document generator"""
+    # Generate data for the student ID
+    data = generate_random_data()
+    # Update the data with the specific information provided
+    data.update({
+        "student_name": f"{last} {first}",
+        "university_name": school,
+    })
+
+    # Create the front of the student ID card
+    img_buffer = create_student_id_front(data)
+    return img_buffer.getvalue()
 
 
 # ============ VERIFIER ============
@@ -219,7 +200,7 @@ class SheerIDVerifier:
         self.client, self.lib_name = create_session(proxy)
         self.org = None
         self.external_user_id = self._parse_query_param(url, "euid")
-        self.locale = self._parse_query_param(url, "locale") or "en-US"
+        self.locale = self._parse_query_param(url, "locale") or "id"
         self.oid = self._parse_query_param(url, "oid")
     
     def __del__(self):
@@ -286,7 +267,7 @@ class SheerIDVerifier:
             # Karena kita mendapatkan 400 Bad Request, coba dengan struktur data yang lebih lengkap
             # seperti yang biasanya digunakan dalam metadata
             metadata = {
-                "flags": '{"collect-info-step-email-first":"default","doc-upload-considerations":"default","doc-upload-may24":"default","doc-upload-redesign-use-legacy-message-keys":false,"docUpload-assertion-checklist":"default","font-size":"default","include-cvec-field-france-student":"not-labeled-optional"}',
+                "flags": '{"collect-info-step-email-first":"default","doc-upload-considerations":"default","doc-upload-may24":"default","doc-upload-redesign-use-legacy-message-keys":false,"docUpload-assertion-checklist":"default","font-size":"default","include-cvec-field-france-student":"not-labeled-optional","locale":"id"}',
                 "submissionOptIn": "By submitting the personal information above, I acknowledge that my personal information is being collected under the privacy policy of the business from which I am seeking a discount"
             }
 
@@ -345,9 +326,17 @@ class SheerIDVerifier:
     
     def _upload_s3(self, url: str, data: bytes) -> bool:
         try:
-            resp = self.client.put(url, content=data, headers={"Content-Type": "image/png"}, timeout=60)
+            # Menambahkan beberapa header tambahan untuk meningkatkan kemungkinan keberhasilan upload
+            headers = {
+                "Content-Type": "image/png",
+                "Content-Length": str(len(data)),
+                "Connection": "keep-alive",
+                "Accept": "*/*",
+            }
+            resp = self.client.put(url, content=data, headers=headers, timeout=60)
             return 200 <= resp.status_code < 300
-        except:
+        except Exception as e:
+            logger.error(f"Upload failed: {e}")
             return False
     
     def check_link(self) -> Dict:
@@ -442,10 +431,27 @@ class SheerIDVerifier:
             logger.info(f"ID: {self.vid[:20]}...")
             logger.info(f"Starting step: {current_step}")
             
-            logger.info("Step 1: Generating student ID...")
-            doc = generate_student_id(first_name, last_name, self.org["name"])
-            logger.info(f"Size: {len(doc)/1024:.1f} KB")
-            
+            logger.info("Step 1: Generating student documents...")
+            # Generate multiple documents for more comprehensive verification
+            data = generate_random_data()
+            # Update the data with the specific information provided
+            data.update({
+                "student_name": f"{last_name} {first_name}",
+                "university_name": self.org["name"],
+            })
+
+            # Create multiple documents for verification
+            documents = {
+                "student_id_front": create_student_id_front(data),
+                "student_id_back": create_student_id_back(data),
+                "transcript": create_transcript_document(data),
+                "tuition": create_tuition_document(data)
+            }
+
+            # Use the student ID front as the main document for upload
+            doc = documents["student_id_front"].getvalue()
+            logger.info(f"Main document size: {len(doc)/1024:.1f} KB")
+
             if current_step == "collectStudentPersonalInfo":
                 logger.info("Step 2: Submitting student info...")
 
@@ -463,7 +469,7 @@ class SheerIDVerifier:
                         "marketConsentValue": False,
                         "verificationId": self.vid,
                         "refererUrl": referer_url,
-                        "flags": '{"collect-info-step-email-first":"default","doc-upload-considerations":"default","doc-upload-may24":"default","doc-upload-redesign-use-legacy-message-keys":false,"docUpload-assertion-checklist":"default","font-size":"default","include-cvec-field-france-student":"not-labeled-optional"}',
+                        "flags": '{"collect-info-step-email-first":"default","doc-upload-considerations":"default","doc-upload-may24":"default","doc-upload-redesign-use-legacy-message-keys":false,"docUpload-assertion-checklist":"default","font-size":"default","include-cvec-field-france-student":"not-labeled-optional","locale":"id"}',
                         "submissionOptIn": "By submitting the personal information above, I acknowledge that my personal information is being collected under the privacy policy of the business from which I am seeking a discount"
                     }
                 }

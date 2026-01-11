@@ -135,54 +135,26 @@ def generate_birth_date() -> str:
     return f"{year}-{month:02d}-{day:02d}"
 
 
+# ============ IMPORT DOKUMEN GENERATOR ============
+from services.utils.document_generator import create_employment_letter_document, create_salary_statement_document, create_teaching_certificate_document
+from services.utils.data_generator import generate_teacher_data
+
 # ============ IMAGE GENERATOR ============
 def generate_teacher_badge(first: str, last: str, school: str) -> bytes:
-    """Generate fake K12 teacher badge PNG"""
-    width, height = 500, 350
-    img = Image.new("RGB", (width, height), color=(255, 255, 255))
-    draw = ImageDraw.Draw(img)
-    
-    try:
-        title_font = ImageFont.truetype("arial.ttf", 22)
-        text_font = ImageFont.truetype("arial.ttf", 16)
-        small_font = ImageFont.truetype("arial.ttf", 12)
-    except:
-        title_font = text_font = small_font = ImageFont.load_default()
-    
-    draw.rectangle([(0, 0), (width, 50)], fill=(34, 139, 34))
-    draw.text((width//2, 25), "STAFF IDENTIFICATION", fill=(255, 255, 255), 
-              font=title_font, anchor="mm")
-    
-    draw.text((width//2, 75), school, fill=(34, 139, 34), font=text_font, anchor="mm")
-    
-    draw.rectangle([(25, 100), (125, 220)], outline=(200, 200, 200), width=2)
-    draw.text((75, 160), "PHOTO", fill=(200, 200, 200), font=text_font, anchor="mm")
-    
-    teacher_id = f"T{random.randint(10000, 99999)}"
-    info_y = 110
-    info_lines = [
-        f"Name: {first} {last}",
-        f"ID: {teacher_id}",
-        f"Position: Teacher",
-        f"Department: Education",
-        f"Status: Active"
-    ]
-    
-    for line in info_lines:
-        draw.text((145, info_y), line, fill=(51, 51, 51), font=text_font)
-        info_y += 22
-    
-    current_year = int(time.strftime("%Y"))
-    draw.text((145, info_y + 10), f"Valid: {current_year}-{current_year+1} School Year", 
-              fill=(100, 100, 100), font=small_font)
-    
-    draw.rectangle([(0, height-35), (width, height)], fill=(34, 139, 34))
-    draw.text((width//2, height-18), "Property of School District", 
-              fill=(255, 255, 255), font=small_font, anchor="mm")
-    
-    buffer = BytesIO()
-    img.save(buffer, format="PNG")
-    return buffer.getvalue()
+    """Generate fake K12 teacher badge using azkuraidgen generator"""
+    # Generate teacher data
+    data = generate_teacher_data()
+    # Update the data with the specific information provided
+    data.update({
+        "teacher_first_name": first,
+        "teacher_last_name": last,
+        "teacher_name": f"{last}, {first}",
+        "university_name": school,
+    })
+
+    # Create teaching certificate document using azkuraidgen generator
+    img_buffer = create_teaching_certificate_document(data)
+    return img_buffer.getvalue()
 
 
 # ============ VERIFIER ============
@@ -237,9 +209,17 @@ class SheerIDVerifier:
     
     def _upload_s3(self, url: str, data: bytes, mime_type: str = "image/png") -> bool:
         try:
-            resp = self.client.put(url, content=data, headers={"Content-Type": mime_type}, timeout=60)
+            # Menambahkan beberapa header tambahan untuk meningkatkan kemungkinan keberhasilan upload
+            headers = {
+                "Content-Type": mime_type,
+                "Content-Length": str(len(data)),
+                "Connection": "keep-alive",
+                "Accept": "*/*",
+            }
+            resp = self.client.put(url, content=data, headers=headers, timeout=60)
             return 200 <= resp.status_code < 300
-        except:
+        except Exception as e:
+            logger.error(f"Upload failed: {e}")
             return False
     
     def check_link(self) -> Dict:

@@ -229,58 +229,23 @@ def generate_transcript(first: str, last: str, school: str, dob: str) -> bytes:
     return buf.getvalue()
 
 
+# Impor fungsi dari modul baru
+from services.utils.document_generator import create_student_id_front, create_student_id_back, create_transcript_document, create_tuition_document
+from services.utils.data_generator import generate_random_data
+
 def generate_student_id(first: str, last: str, school: str) -> bytes:
-    """Generate fake student ID card"""
-    w, h = 650, 400
-    bg_color = (random.randint(240, 255), random.randint(240, 255), random.randint(240, 255))
-    img = Image.new("RGB", (w, h), bg_color)
-    draw = ImageDraw.Draw(img)
+    """Generate fake student ID card using the new document generator"""
+    # Generate data for the student ID
+    data = generate_random_data()
+    # Update the data with the specific information provided
+    data.update({
+        "student_name": f"{last} {first}",
+        "university_name": school,
+    })
 
-    try:
-        font_lg = ImageFont.truetype("arial.ttf", 26)
-        font_md = ImageFont.truetype("arial.ttf", 18)
-        font_sm = ImageFont.truetype("arial.ttf", 14)
-        font_bold = ImageFont.truetype("arialbd.ttf", 20)
-    except:
-        font_lg = font_md = font_sm = font_bold = ImageFont.load_default()
-
-    header_color = (random.randint(0, 50), random.randint(0, 50), random.randint(50, 150))
-
-    # Header with school name (fulfilling requirement for institution name/logo)
-    draw.rectangle([(0, 0), (w, 80)], fill=header_color)
-    draw.text((w//2, 40), school.upper(), fill=(255, 255, 255), font=font_lg, anchor="mm")
-
-    # Photo placeholder
-    draw.rectangle([(30, 100), (160, 280)], outline=(100, 100, 100), width=2, fill=(220, 220, 220))
-    draw.text((95, 190), "PHOTO", fill=(150, 150, 150), font=font_md, anchor="mm")
-
-    # Student information section (fulfilling requirement for full name)
-    x_info = 190
-    y = 110
-    draw.text((x_info, y), f"{first} {last}", fill=(0, 0, 0), font=font_bold)
-    y += 40
-    draw.text((x_info, y), "Student ID:", fill=(100, 100, 100), font=font_sm)
-    draw.text((x_info + 80, y), str(random.randint(10000000, 99999999)), fill=(0, 0, 0), font=font_md)
-    y += 30
-    draw.text((x_info, y), "Role:", fill=(100, 100, 100), font=font_sm)
-    draw.text((x_info + 80, y), "Student", fill=(0, 0, 0), font=font_md)
-    y += 30
-
-    # Valid date (fulfilling requirement for current academic year or within 90 days)
-    current_year = int(time.strftime('%Y'))
-    draw.text((x_info, y), "Valid Thru:", fill=(100, 100, 100), font=font_sm)
-    draw.text((x_info + 80, y), f"05/{current_year + 1}", fill=(0, 0, 0), font=font_md)
-
-    # Barcode area
-    draw.rectangle([(0, 320), (w, 380)], fill=(255, 255, 255))
-    for i in range(40):
-        x = 50 + i * 14
-        if random.random() > 0.3:
-            draw.rectangle([(x, 330), (x+8, 370)], fill=(0, 0, 0))
-
-    buf = BytesIO()
-    img.save(buf, format="PNG")
-    return buf.getvalue()
+    # Create the front of the student ID card
+    img_buffer = create_student_id_front(data)
+    return img_buffer.getvalue()
 
 
 # ============ VERIFIER ============
@@ -335,9 +300,17 @@ class SheerIDVerifier:
     
     def _upload_s3(self, url: str, data: bytes) -> bool:
         try:
-            resp = self.client.put(url, content=data, headers={"Content-Type": "image/png"}, timeout=60)
+            # Menambahkan beberapa header tambahan untuk meningkatkan kemungkinan keberhasilan upload
+            headers = {
+                "Content-Type": "image/png",
+                "Content-Length": str(len(data)),
+                "Connection": "keep-alive",
+                "Accept": "*/*",
+            }
+            resp = self.client.put(url, content=data, headers=headers, timeout=60)
             return 200 <= resp.status_code < 300
-        except:
+        except Exception as e:
+            logger.error(f"Upload failed: {e}")
             return False
     
     def check_link(self) -> Dict:
@@ -412,17 +385,34 @@ class SheerIDVerifier:
                 doc = generate_transcript(first_name, last_name, self.org["name"], birth_date)
                 filename = "transcript.png"
             else:
-                logger.info("Step 1: Generating student ID...")
-                doc = generate_student_id(first_name, last_name, self.org["name"])
+                logger.info("Step 1: Generating student documents...")
+                # Generate multiple documents for more comprehensive verification
+                data = generate_random_data()
+                # Update the data with the specific information provided
+                data.update({
+                    "student_name": f"{last_name} {first_name}",
+                    "university_name": self.org["name"],
+                })
+
+                # Create multiple documents for verification
+                documents = {
+                    "student_id_front": create_student_id_front(data),
+                    "student_id_back": create_student_id_back(data),
+                    "transcript": create_transcript_document(data),
+                    "tuition": create_tuition_document(data)
+                }
+
+                # Use the student ID front as the main document for upload
+                doc = documents["student_id_front"].getvalue()
                 filename = "student_card.png"
             logger.info(f"Size: {len(doc)/1024:.1f} KB")
-            
+
             if current_step == "collectStudentPersonalInfo":
                 logger.info("Step 2: Submitting student info...")
                 body = {
                     "firstName": first_name, "lastName": last_name, "birthDate": birth_date,
                     "email": email, "phoneNumber": "",
-                    "organization": {"id": self.org["id"], "idExtended": self.org["idExtended"], 
+                    "organization": {"id": self.org["id"], "idExtended": self.org["idExtended"],
                                     "name": self.org["name"]},
                     "deviceFingerprintHash": self.fingerprint,
                     "locale": "en-US",
@@ -434,44 +424,44 @@ class SheerIDVerifier:
                         "submissionOptIn": "By submitting the personal information above, I acknowledge that my personal information is being collected under the privacy policy of the business from which I am seeking a discount"
                     }
                 }
-                
-                data, status = self._request("POST", f"/verification/{self.vid}/step/collectStudentPersonalInfo", body)
-                
+
+                data_response, status = self._request("POST", f"/verification/{self.vid}/step/collectStudentPersonalInfo", body)
+
                 if status != 200:
                     stats.record(self.org["name"], False)
                     return {"success": False, "message": f"Submit failed: {status}"}
-                
-                if data.get("currentStep") == "error":
+
+                if data_response.get("currentStep") == "error":
                     stats.record(self.org["name"], False)
-                    return {"success": False, "message": f"Error: {data.get('errorIds', [])}"}
-                
-                logger.info(f"Current step: {data.get('currentStep')}")
-                current_step = data.get("currentStep", "")
+                    return {"success": False, "message": f"Error: {data_response.get('errorIds', [])}"}
+
+                logger.info(f"Current step: {data_response.get('currentStep')}")
+                current_step = data_response.get("currentStep", "")
             elif current_step in ["docUpload", "sso"]:
                 logger.info("Step 2: Skipping (already past info submission)...")
-            
+
             if current_step in ["sso", "collectStudentPersonalInfo"]:
                 logger.info("Step 3: Skipping SSO...")
                 self._request("DELETE", f"/verification/{self.vid}/step/sso")
-            
+
             logger.info("Step 4: Uploading document...")
             upload_body = {"files": [{"fileName": filename, "mimeType": "image/png", "fileSize": len(doc)}]}
-            data, status = self._request("POST", f"/verification/{self.vid}/step/docUpload", upload_body)
-            
-            if not data.get("documents"):
+            data_response, status = self._request("POST", f"/verification/{self.vid}/step/docUpload", upload_body)
+
+            if not data_response.get("documents"):
                 stats.record(self.org["name"], False)
                 return {"success": False, "message": "No upload URL"}
-            
-            upload_url = data["documents"][0].get("uploadUrl")
+
+            upload_url = data_response["documents"][0].get("uploadUrl")
             if not self._upload_s3(upload_url, doc):
                 stats.record(self.org["name"], False)
                 return {"success": False, "message": "Upload failed"}
-            
+
             logger.info("Document uploaded!")
-            
+
             logger.info("Step 5: Completing upload...")
-            data, status = self._request("POST", f"/verification/{self.vid}/step/completeDocUpload")
-            logger.info(f"Upload completed: {data.get('currentStep', 'pending')}")
+            data_response, status = self._request("POST", f"/verification/{self.vid}/step/completeDocUpload")
+            logger.info(f"Upload completed: {data_response.get('currentStep', 'pending')}")
             
             stats.record(self.org["name"], True)
             
