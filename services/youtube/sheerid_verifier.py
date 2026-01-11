@@ -220,6 +220,7 @@ class SheerIDVerifier:
         self.org = None
         self.external_user_id = self._parse_query_param(url, "euid")
         self.locale = self._parse_query_param(url, "locale") or "en-US"
+        self.oid = self._parse_query_param(url, "oid")
     
     def __del__(self):
         if hasattr(self, "client"):
@@ -235,8 +236,9 @@ class SheerIDVerifier:
         if match:
             return match.group(1)
         # Jika tidak ditemukan, coba ekstrak dari oid (untuk URL kompleks YouTube)
-        match = re.search(r'oid=([A-Za-z0-9_-]+)', url)
-        return match.group(1) if match else None
+        # match = re.search(r'oid=([A-Za-z0-9_-]+)', url)
+        # return match.group(1) if match else None
+        return None
 
     @staticmethod
     def parse_verification_id(url: str) -> Optional[str]:
@@ -246,8 +248,9 @@ class SheerIDVerifier:
         if match:
             return match.group(1)
         # Jika tidak ditemukan, coba ekstrak dari oid (untuk URL kompleks YouTube)
-        match = re.search(r'oid=([A-Za-z0-9_-]+)', url)
-        return match.group(1) if match else None
+        # match = re.search(r'oid=([A-Za-z0-9_-]+)', url)
+        # return match.group(1) if match else None
+        return None
 
     @staticmethod
     def _parse_query_param(url: str, param: str) -> Optional[str]:
@@ -259,10 +262,26 @@ class SheerIDVerifier:
         try:
             # Membuat sesi verifikasi baru dari URL penawaran
             headers = get_headers(for_sheerid=True)
+
+            # Ekstrak parameter-parameter penting dari URL penawaran
+            import urllib.parse
+            parsed_url = urllib.parse.urlparse(self.url)
+            params = urllib.parse.parse_qs(parsed_url.query)
+
+            # Bangun body dengan parameter tambahan dari URL penawaran
             body = {
                 "programId": PROGRAM_ID,
                 "installPageUrl": self.url,
             }
+
+            # Tambahkan parameter tambahan jika tersedia
+            if 'euid' in params:
+                body["externalUserId"] = params['euid'][0]
+            if 'locale' in params:
+                body["locale"] = params['locale'][0]
+            if 'oid' in params:  # Gunakan oid sebagai external user ID jika tidak ada euid
+                if 'externalUserId' not in body:
+                    body["externalUserId"] = params['oid'][0]
 
             # Karena ini fungsi async, kita perlu membuat request async
             # Tapi karena kita menggunakan httpx client sync, kita panggil sync
@@ -444,6 +463,11 @@ class SheerIDVerifier:
                 if self.external_user_id:
                     body["externalUserId"] = self.external_user_id
                     body["metadata"]["externalUserId"] = self.external_user_id
+                
+                # Add oid if present (as orderId or just oid in metadata)
+                if self.oid:
+                    body["metadata"]["oid"] = self.oid
+                    body["metadata"]["orderId"] = self.oid
 
                 data, status = self._request("POST", f"/verification/{self.vid}/step/collectStudentPersonalInfo", body)
 
@@ -464,6 +488,12 @@ class SheerIDVerifier:
                         
                         if self.external_user_id:
                             body_retry["externalUserId"] = self.external_user_id
+                        
+                        if self.oid:
+                            if "metadata" not in body_retry:
+                                body_retry["metadata"] = {}
+                            body_retry["metadata"]["oid"] = self.oid
+                            body_retry["metadata"]["orderId"] = self.oid
 
                         data, status = self._request("POST", f"/verification/{self.vid}/step/collectStudentPersonalInfo", body_retry)
 
