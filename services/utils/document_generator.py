@@ -18,6 +18,7 @@ from .data_generator import (
     generate_teaching_certificate_data
 )
 
+
 @cached_document_creation
 def create_transcript_document(data=None, width=800, height=1000):
     """
@@ -923,46 +924,6 @@ def create_teaching_certificate_document(data=None, width=800, height=1000):
     return img_buffer
 
 
-# Cache sederhana untuk menyimpan dokumen yang sudah dibuat
-_document_cache = {}
-
-def _get_cache_key(func_name, data, **kwargs):
-    """Menghasilkan kunci cache berdasarkan fungsi, data, dan parameter"""
-    data_str = str(sorted(data.items())) if isinstance(data, dict) else str(data)
-    kwargs_str = str(sorted(kwargs.items())) if kwargs else ""
-    cache_input = f"{func_name}:{data_str}:{kwargs_str}"
-    return hashlib.md5(cache_input.encode()).hexdigest()
-
-def cached_document_creation(func):
-    """Decorator untuk caching dokumen yang dihasilkan"""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        # Ambil data dari argumen (asumsi argumen pertama adalah data)
-        data = args[0] if args else None
-        cache_key = _get_cache_key(func.__name__, data, **kwargs)
-
-        # Cek apakah dokumen sudah ada di cache
-        if cache_key in _document_cache:
-            # Kembalikan salinan dari cache
-            cached_buffer = _document_cache[cache_key]
-            new_buffer = BytesIO()
-            new_buffer.write(cached_buffer.getvalue())
-            new_buffer.seek(0)
-            return new_buffer
-
-        # Jika tidak ada di cache, buat dokumen baru
-        result = func(*args, **kwargs)
-
-        # Simpan ke cache
-        _document_cache[cache_key] = result
-
-        # Kembalikan salinan
-        new_buffer = BytesIO()
-        new_buffer.write(result.getvalue())
-        new_buffer.seek(0)
-        return new_buffer
-
-    return wrapper
 
 def validate_document_quality(image_buffer, min_width=800, min_height=600, max_file_size=5*1024*1024):
     """
