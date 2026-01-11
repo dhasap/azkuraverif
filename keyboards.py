@@ -215,8 +215,10 @@ def success_animation() -> InlineKeyboardMarkup:
 def success_verification_keyboard() -> InlineKeyboardMarkup:
     """Keyboard setelah verifikasi berhasil - Berguna dan interaktif"""
     keyboard = [
-        [InlineKeyboardButton(text="🚀 Verifikasi Lagi", callback_data="verify_now")],
-        [InlineKeyboardButton(text="👤 Lihat Profil", callback_data="menu_profile")],
+        [
+            InlineKeyboardButton(text="🚀 Verifikasi Lagi", callback_data="verify_now"),
+            InlineKeyboardButton(text="👤 Lihat Profil", callback_data="menu_profile")
+        ],
         [InlineKeyboardButton(text="🏠 Menu Utama", callback_data="menu_home")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -224,8 +226,10 @@ def success_verification_keyboard() -> InlineKeyboardMarkup:
 def failed_verification_keyboard() -> InlineKeyboardMarkup:
     """Keyboard setelah verifikasi gagal - Berguna dan interaktif"""
     keyboard = [
-        [InlineKeyboardButton(text="🔄 Coba Lagi", callback_data="verify_now")],
-        [InlineKeyboardButton(text="❓ Bantuan", callback_data="menu_help")],
+        [
+            InlineKeyboardButton(text="🔄 Coba Lagi", callback_data="verify_now"),
+            InlineKeyboardButton(text="❓ Bantuan", callback_data="menu_help")
+        ],
         [InlineKeyboardButton(text="🏠 Menu Utama", callback_data="menu_home")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
