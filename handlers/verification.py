@@ -540,6 +540,18 @@ async def execute_verification(callback: types.CallbackQuery, state: FSMContext)
                 f"🔒 <b>Keamanan:</b> Data Anda aman\n"
                 f"⚡ <b>Kecepatan:</b> Proses dibatalkan instan"
             )
+
+            # Logging informasi kegagalan verifikasi untuk debugging
+            import logging
+            logging.basicConfig(level=logging.INFO)
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Verification failed for user {user_id} with service {service_key}")
+            logger.warning(f"Reason: {result['message']}")
+            logger.warning(f"Original URL: {original_url}")
+            logger.warning(f"Verification ID: {verif_id}")
+            if user_email:
+                logger.warning(f"User email: {user_email}")
+
             await callback.message.edit_text(fail_msg, reply_markup=keyboards.failed_verification_keyboard(), parse_mode="HTML")
 
     except Exception as e:
@@ -555,6 +567,16 @@ async def execute_verification(callback: types.CallbackQuery, state: FSMContext)
             f"🛡️ <b>Keamanan:</b> Data Anda tetap aman\n"
             f"⚡ <b>Kecepatan:</b> Pemulihan instan"
         )
+        # Logging error yang lebih detail untuk debugging
+        import logging
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+        logger.error(f"Verification failed for user {user_id} with service {service_key}. Error: {str(e)}")
+        logger.error(f"Original URL: {original_url}")
+        logger.error(f"Verification ID: {verif_id}")
+        if user_email:
+            logger.error(f"User email: {user_email}")
+
         await callback.message.edit_text(error_msg, reply_markup=keyboards.failure_animation(), parse_mode="HTML")
 
     finally:
