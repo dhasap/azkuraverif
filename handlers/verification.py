@@ -229,10 +229,10 @@ async def process_url(message: types.Message, state: FSMContext):
         await message.reply("❌ <b>Link Invalid!</b>\nHarus diawali dengan <code>http://</code> atau <code>https://</code>.", parse_mode="HTML")
         return
 
-    # Validasi domain SheerID
+    # Validasi domain SheerID - khusus untuk layanan selain YouTube
     from urllib.parse import urlparse
     parsed = urlparse(url)
-    if 'sheerid.com' not in parsed.netloc.lower():
+    if service_key != 'youtube' and 'sheerid.com' not in parsed.netloc.lower():
         await message.reply("❌ <b>Domain Invalid!</b>\nLink harus berasal dari <code>sheerid.com</code>.", parse_mode="HTML")
         return
 
@@ -258,8 +258,19 @@ async def process_url(message: types.Message, state: FSMContext):
 
     # Cek verification ID via method static di Class Verifier
     VerifierClass = SERVICES[service_key]['verifier']
-    verif_id = VerifierClass.parse_verification_id(url)
-    
+
+    # Khusus YouTube: coba ekstrak ID verifikasi dari URL kompleks
+    if service_key == 'youtube':
+        # Coba ekstrak dari parameter oid di URL kompleks YouTube
+        import re
+        match = re.search(r'oid=([A-Za-z0-9_-]+)', url)
+        if match:
+            verif_id = match.group(1)
+        else:
+            verif_id = VerifierClass.parse_verification_id(url)
+    else:
+        verif_id = VerifierClass.parse_verification_id(url)
+
     # YouTubeVerifier dan BoltVerifier support auto-create session via URL
     if not verif_id and VerifierClass not in [BoltVerifier, YouTubeVerifier]:
         await message.reply("❌ <b>Gagal membaca ID Verifikasi.</b>\nPastikan Anda menyalin link lengkap dari halaman SheerID.", parse_mode="HTML")
