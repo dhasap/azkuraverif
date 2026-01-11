@@ -523,7 +523,7 @@ async def execute_verification(callback: types.CallbackQuery, state: FSMContext)
                 f"⚡ <b>Kecepatan:</b> Proses selesai dalam waktu optimal\n"
                 f"🔒 <b>Keamanan:</b> Data Anda terlindungi"
             )
-            await callback.message.edit_text(success_msg, reply_markup=keyboards.success_animation(), parse_mode="HTML", disable_web_page_preview=True)
+            await callback.message.edit_text(success_msg, reply_markup=keyboards.success_verification_keyboard(), parse_mode="HTML", disable_web_page_preview=True)
 
         else:
             db.add_balance(user_id, cost)
@@ -540,7 +540,7 @@ async def execute_verification(callback: types.CallbackQuery, state: FSMContext)
                 f"🔒 <b>Keamanan:</b> Data Anda aman\n"
                 f"⚡ <b>Kecepatan:</b> Proses dibatalkan instan"
             )
-            await callback.message.edit_text(fail_msg, reply_markup=keyboards.failure_animation(), parse_mode="HTML")
+            await callback.message.edit_text(fail_msg, reply_markup=keyboards.failed_verification_keyboard(), parse_mode="HTML")
 
     except Exception as e:
         db.add_balance(user_id, cost)
