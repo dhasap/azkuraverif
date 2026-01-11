@@ -394,27 +394,51 @@ class SheerIDVerifier:
             
             if current_step == "collectStudentPersonalInfo":
                 logger.info("Step 2: Submitting student info...")
+
+                # Gunakan URL asli sebagai referer daripada URL SheerID standar
+                referer_url = self.url if self.url else f"https://services.sheerid.com/verify/{PROGRAM_ID}/?verificationId={self.vid}"
+
                 body = {
                     "firstName": first_name, "lastName": last_name, "birthDate": birth_date,
                     "email": email, "phoneNumber": "",
-                    "organization": {"id": self.org["id"], "idExtended": self.org["idExtended"], 
+                    "organization": {"id": self.org["id"], "idExtended": self.org["idExtended"],
                                     "name": self.org["name"]},
                     "deviceFingerprintHash": self.fingerprint,
                     "locale": "en-US",
                     "metadata": {
                         "marketConsentValue": False,
                         "verificationId": self.vid,
-                        "refererUrl": f"https://services.sheerid.com/verify/{PROGRAM_ID}/?verificationId={self.vid}",
+                        "refererUrl": referer_url,
                         "flags": '{"collect-info-step-email-first":"default","doc-upload-considerations":"default","doc-upload-may24":"default","doc-upload-redesign-use-legacy-message-keys":false,"docUpload-assertion-checklist":"default","font-size":"default","include-cvec-field-france-student":"not-labeled-optional"}',
                         "submissionOptIn": "By submitting the personal information above, I acknowledge that my personal information is being collected under the privacy policy of the business from which I am seeking a discount"
                     }
                 }
-                
+
                 data, status = self._request("POST", f"/verification/{self.vid}/step/collectStudentPersonalInfo", body)
-                
+
                 if status != 200:
-                    stats.record(self.org["name"], False)
-                    return {"success": False, "message": f"Submit failed: {status}"}
+                    # Jika gagal dengan 400, coba tanpa beberapa field yang mungkin tidak diperlukan
+                    if status == 400:
+                        logger.info("Retrying with simplified metadata...")
+
+                        # Coba kirim tanpa beberapa field yang mungkin menyebabkan masalah
+                        body_retry = {
+                            "firstName": first_name, "lastName": last_name, "birthDate": birth_date,
+                            "email": email, "phoneNumber": "",
+                            "organization": {"id": self.org["id"], "idExtended": self.org["idExtended"],
+                                            "name": self.org["name"]},
+                            "deviceFingerprintHash": self.fingerprint,
+                            "locale": "en-US"
+                        }
+
+                        data, status = self._request("POST", f"/verification/{self.vid}/step/collectStudentPersonalInfo", body_retry)
+
+                        if status != 200:
+                            stats.record(self.org["name"], False)
+                            return {"success": False, "message": f"Submit failed: {status}"}
+                    else:
+                        stats.record(self.org["name"], False)
+                        return {"success": False, "message": f"Submit failed: {status}"}
                 
                 if data.get("currentStep") == "error":
                     stats.record(self.org["name"], False)
