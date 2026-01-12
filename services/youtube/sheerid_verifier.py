@@ -255,21 +255,33 @@ class SheerIDVerifier:
                 "installPageUrl": self.url,
             }
 
-            # Tambahkan parameter tambahan jika tersedia
-            if 'euid' in params:
-                body["externalUserId"] = params['euid'][0]
-            if 'locale' in params:
-                body["locale"] = params['locale'][0]
-            if 'oid' in params:  # Gunakan oid sebagai external user ID jika tidak ada euid
-                if 'externalUserId' not in body:
-                    body["externalUserId"] = params['oid'][0]
-
-            # Karena kita mendapatkan 400 Bad Request, coba dengan struktur data yang lebih lengkap
-            # seperti yang biasanya digunakan dalam metadata
+            # Siapkan metadata dasar
             metadata = {
                 "flags": '{"collect-info-step-email-first":"default","doc-upload-considerations":"default","doc-upload-may24":"default","doc-upload-redesign-use-legacy-message-keys":false,"docUpload-assertion-checklist":"default","font-size":"default","include-cvec-field-france-student":"not-labeled-optional","locale":"id"}',
                 "submissionOptIn": "By submitting the personal information above, I acknowledge that my personal information is being collected under the privacy policy of the business from which I am seeking a discount"
             }
+
+            # Tambahkan parameter tambahan jika tersedia
+            if 'euid' in params:
+                # body["externalUserId"] = params['euid'][0]  <-- Hapus ini karena menyebabkan error 400
+                metadata["externalUserId"] = params['euid'][0]
+            
+            if 'locale' in params:
+                body["locale"] = params['locale'][0]
+            
+            if 'oid' in params:  # Gunakan oid sebagai external user ID jika tidak ada euid
+                oid_val = params['oid'][0]
+                if 'externalUserId' not in metadata: # Cek metadata, bukan body
+                    metadata["externalUserId"] = oid_val
+                metadata["oid"] = oid_val
+                metadata["orderId"] = oid_val
+
+            # Tambahkan parameter spesifik YouTube ke metadata
+            # Parameter ini penting agar SheerID bisa memvalidasi request dari YouTube
+            youtube_params = ['yrdup', 'ytpid', 'ytsku', 'yrsp']
+            for p in youtube_params:
+                if p in params:
+                    metadata[p] = params[p][0]
 
             body["metadata"] = metadata
 
@@ -286,6 +298,10 @@ class SheerIDVerifier:
                 return data.get("verificationId")
             else:
                 logger.error(f"Failed to create verification session: {response.status_code}")
+                try:
+                    logger.error(f"Response: {response.text}")
+                except:
+                    pass
                 return None
         except Exception as e:
             logger.error(f"Exception while creating verification session: {e}")
