@@ -306,7 +306,7 @@ def create_tuition_document(data=None, width=800, height=1000):
 
 
 @cached_document_creation
-def create_student_id_front(data=None, width=750, height=480, custom_logo_path=None):
+def create_student_id_front(data=None, width=750, height=480, custom_logo_path=None, custom_photo_path=None):
     """
     Membuat bagian depan kartu identitas pelajar dalam bentuk gambar
     Berdasarkan StudentCardFrontTemplate.jsx
@@ -342,29 +342,45 @@ def create_student_id_front(data=None, width=750, height=480, custom_logo_path=N
 
     draw.rectangle([(0, 0), (width, 135)], fill=(r, g, b))
 
-    # Logo - jika path logo kustom disediakan, gunakan itu, jika tidak gunakan placeholder
+    # Logo - jika path logo kustom disediakan, gunakan itu
+    # Jika tidak, buat logo berbasis inisial yang terlihat resmi
     logo_x, logo_y = 30, 12
     logo_size = 112
+    
     if custom_logo_path and os.path.exists(custom_logo_path):
         try:
             logo_img = Image.open(custom_logo_path).convert("RGBA")
             logo_img = logo_img.resize((logo_size, logo_size), Image.Resampling.LANCZOS)
-
-            # Buat mask untuk membuat logo bulat
             mask = Image.new('L', (logo_size, logo_size), 0)
             draw_mask = ImageDraw.Draw(mask)
             draw_mask.ellipse((0, 0, logo_size, logo_size), fill=255)
-
-            # Tempatkan logo di posisi yang ditentukan
             img.paste(logo_img, (logo_x, logo_y), mask)
-        except Exception as e:
-            # Jika terjadi kesalahan saat memuat logo, gunakan placeholder
-            draw.ellipse([(logo_x, logo_y), (logo_x + logo_size, logo_y + logo_size)], fill='white')
-            draw.text((logo_x + logo_size//2, logo_y + logo_size//2), "LOGO", fill=(0, 0, 0), font=label_font, anchor="mm")
-    else:
-        # Logo placeholder
-        draw.ellipse([(logo_x, logo_y), (logo_x + logo_size, logo_y + logo_size)], fill='white')
-        draw.text((logo_x + logo_size//2, logo_y + logo_size//2), "LOGO", fill=(0, 0, 0), font=label_font, anchor="mm")
+        except Exception:
+            # Fallback ke generated logo jika gagal
+            pass
+    
+    # GENERATED LOGO LOGIC (Selalu fallback ke sini jika tidak ada custom logo)
+    if not (custom_logo_path and os.path.exists(custom_logo_path)):
+        # Ambil inisial universitas (misal "Pennsylvania State University" -> "PSU")
+        uni_name = data.get("university_name", "University")
+        ignored_words = ["of", "the", "at", "and"]
+        initials = "".join([word[0].upper() for word in uni_name.split() if word.lower() not in ignored_words])[:3]
+        
+        # Gambar lingkaran background logo (putih)
+        draw.ellipse([(logo_x, logo_y), (logo_x + logo_size, logo_y + logo_size)], fill='white', outline='#e0e0e0', width=2)
+        
+        # Gambar inisial di tengah
+        try:
+            # Cari font tebal jika ada
+            logo_font = ImageFont.truetype("arialbd.ttf", 40)
+        except:
+            try:
+                logo_font = ImageFont.truetype("arial.ttf", 40)
+            except:
+                logo_font = ImageFont.load_default()
+        
+        # Warna teks inisial sesuai warna kartu
+        draw.text((logo_x + logo_size//2, logo_y + logo_size//2), initials, fill=card_color, font=logo_font, anchor="mm")
 
     # Nama universitas dan subtitle
     draw.text((170, 25), data["university_name"], fill='white', font=title_font_large)
@@ -373,11 +389,63 @@ def create_student_id_front(data=None, width=750, height=480, custom_logo_path=N
     # Background body
     draw.rectangle([(0, 135), (width, 390)], fill=(250, 250, 250))
 
-    # Foto placeholder
+    # FOTO PELAJAR
     photo_x, photo_y = 30, 165
     photo_width, photo_height = 140, 180
-    draw.rectangle([(photo_x, photo_y), (photo_x + photo_width, photo_y + photo_height)], fill='#e0e0e0', outline='#ddd', width=3)
-    draw.text((photo_x + photo_width//2, photo_y + photo_height//2), "PHOTO\n3x4", fill='#999', font=label_font, anchor="mm")
+    
+    # 1. Cek apakah ada custom photo asli yang diupload
+    photo_pasted = False
+    if custom_photo_path and os.path.exists(custom_photo_path):
+        try:
+            student_photo = Image.open(custom_photo_path).convert("RGB")
+            
+            # Auto-crop dan resize agar pas 140x180 (maintain aspect ratio)
+            photo_ratio = photo_width / photo_height
+            img_ratio = student_photo.width / student_photo.height
+            
+            if img_ratio > photo_ratio:
+                # Terlalu lebar, crop kiri-kanan
+                new_width = int(student_photo.height * photo_ratio)
+                left = (student_photo.width - new_width) / 2
+                student_photo = student_photo.crop((left, 0, left + new_width, student_photo.height))
+            else:
+                # Terlalu tinggi, crop atas-bawah
+                new_height = int(student_photo.width / photo_ratio)
+                top = (student_photo.height - new_height) / 2
+                student_photo = student_photo.crop((0, top, student_photo.width, top + new_height))
+            
+            student_photo = student_photo.resize((photo_width, photo_height), Image.Resampling.LANCZOS)
+            img.paste(student_photo, (photo_x, photo_y))
+            
+            # Gambar bingkai tipis di atas foto
+            draw.rectangle([(photo_x, photo_y), (photo_x + photo_width, photo_y + photo_height)], outline='#9ca3af', width=1)
+            photo_pasted = True
+        except Exception as e:
+            pass
+
+    # 2. Fallback ke SILUET jika tidak ada foto asli atau gagal
+    if not photo_pasted:
+        # Background foto abu-abu terang
+        draw.rectangle([(photo_x, photo_y), (photo_x + photo_width, photo_y + photo_height)], fill='#d1d5db', outline='#9ca3af', width=2)
+        
+        # Gambar siluet orang (Kepala + Bahu)
+        silhouette_color = '#6b7280'
+        
+        # Kepala
+        head_radius = 35
+        head_center_x = photo_x + photo_width // 2
+        head_center_y = photo_y + 65
+        draw.ellipse([(head_center_x - head_radius, head_center_y - head_radius), 
+                      (head_center_x + head_radius, head_center_y + head_radius)], 
+                     fill=silhouette_color)
+        
+        # Bahu
+        shoulder_width = 100
+        shoulder_height = 80
+        shoulder_x1 = head_center_x - shoulder_width // 2
+        draw.chord([(shoulder_x1, head_center_y + 40), 
+                    (shoulder_x1 + shoulder_width, head_center_y + 40 + shoulder_height*2)], 
+                   start=180, end=0, fill=silhouette_color)
 
     # Informasi pelajar
     info_x = photo_x + photo_width + 30

@@ -44,8 +44,25 @@ def generate_random_data():
 
     selected_major = random.choice(majors)
 
+    # Calculate Dynamic Dates based on current time (Mocked as 2026 in prompt context, but utilizing datetime.now() logic)
+    now = datetime.now()
+    current_year = now.year
+    current_month = now.month
+
+    # Determine current term based on month
+    if 1 <= current_month <= 5:
+        current_term = f"Spring {current_year}"
+        next_term = f"Fall {current_year}"
+    elif 6 <= current_month <= 7:
+        current_term = f"Summer {current_year}"
+        next_term = f"Fall {current_year}"
+    else:
+        current_term = f"Fall {current_year}"
+        next_term = f"Spring {current_year + 1}"
+
     # Generate random courses logic
     def generate_courses(major_prefix, term):
+        # ... (kode sama) ...
         common_courses = [
             {"code": "ENG 1310", "name": "College Writing I", "hours": 3},
             {"code": "ENG 1320", "name": "College Writing II", "hours": 3},
@@ -128,8 +145,8 @@ def generate_random_data():
         
         return result
 
-    term_courses = generate_courses(selected_major["prefix"], "Fall 2024")
-    spring_courses = generate_courses(selected_major["prefix"], "Spring 2025")
+    term_courses = generate_courses(selected_major["prefix"], current_term)
+    spring_courses = generate_courses(selected_major["prefix"], next_term)
 
     # Calculate GPA logic
     def calculate_term_stats(courses):
@@ -178,18 +195,17 @@ def generate_random_data():
 
     # Admission date: 1-3 years ago (ensures student card remains valid)
     years_enrolled = random.randint(1, 3)
-    admission_date = datetime.now() - timedelta(days=years_enrolled*365)
-    # Randomize to a semester start (Aug/Sep or Jan/Feb)
-    admission_month = random.choice([0, 1, 7, 8])  # Jan, Feb, Aug, Sep
-    admission_day = random.randint(15, 28)
-    admission_date = admission_date.replace(month=admission_month+1, day=admission_day)
+    # Use current year for logic
+    admission_year = current_year - years_enrolled
+    admission_date = datetime(admission_year, 8, random.randint(15, 28)) # Usually Fall admission
     admission_date_str = admission_date.strftime('%m/%d/%Y')
 
-    # Student Card issued 1-4 weeks after admission
-    card_issue_date = admission_date + timedelta(days=random.randint(7, 28))
+    # Student Card Issue Date: MUST BE RECENT (within last 3 months) for SheerID verification
+    # Even if admitted years ago, card might be re-issued or validated for current term
+    card_issue_date = fake.date_between(start_date='-3m', end_date='today')
     card_issue_date_str = card_issue_date.strftime('%m/%d/%Y')
 
-    # Valid for 4 years from issue
+    # Valid for 4 years from issue (or until grad)
     card_valid_date = card_issue_date + timedelta(days=4*365)
     card_valid_date_str = card_valid_date.strftime('%m/%d/%Y')
 
@@ -201,7 +217,7 @@ def generate_random_data():
         "student_id": f"{random.randint(100000, 999999)}-{random.randint(1000, 9999)}",
         "passport_number": fake.passport_number().upper(),  # Added passport
         "address": f"{fake.street_address()}, {fake.city()}, {fake.state()}",
-        "term": "Fall 2024",
+        "term": current_term,
         "major": selected_major["name"],
         "program": selected_major["program"],
         "college": selected_major["college"],

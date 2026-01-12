@@ -100,65 +100,401 @@ def select_university(locale: str = None) -> Dict:
 
 
 # ============ UTILITIES ============
-FIRST_NAMES = [
+
+
+MALE_FIRST_NAMES = [
+
+
     "James", "John", "Robert", "Michael", "William", "David", "Richard", "Joseph",
+
+
     "Thomas", "Christopher", "Charles", "Daniel", "Matthew", "Anthony", "Mark",
+
+
     "Donald", "Steven", "Andrew", "Paul", "Joshua", "Kenneth", "Kevin", "Brian",
+
+
     "George", "Timothy", "Ronald", "Edward", "Jason", "Jeffrey", "Ryan",
+
+
+    "Budi", "Eko", "Dwi", "Agus", "Hendra", "Rizky", "Bayu", "Aditya", "Fajar"
+
+
+]
+
+
+
+
+
+FEMALE_FIRST_NAMES = [
+
+
     "Mary", "Patricia", "Jennifer", "Linda", "Barbara", "Elizabeth", "Susan",
+
+
     "Jessica", "Sarah", "Karen", "Lisa", "Nancy", "Betty", "Margaret", "Sandra",
+
+
     "Ashley", "Kimberly", "Emily", "Donna", "Michelle", "Dorothy", "Carol",
+
+
     "Amanda", "Melissa", "Deborah", "Stephanie", "Rebecca", "Sharon", "Laura",
-    "Emma", "Olivia", "Ava", "Isabella", "Sophia", "Mia", "Charlotte", "Amelia"
+
+
+    "Emma", "Olivia", "Ava", "Isabella", "Sophia", "Mia", "Charlotte", "Amelia",
+
+
+    "Siti", "Sri", "Nur", "Dewi", "Putri", "Indah", "Rina", "Ayu", "Lestari"
+
+
 ]
+
+
+
+
+
 LAST_NAMES = [
+
+
     "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
+
+
     "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson",
+
+
     "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson",
+
+
     "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson", "Walker",
+
+
     "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill",
+
+
     "Flores", "Green", "Adams", "Nelson", "Baker", "Hall", "Rivera", "Campbell",
-    "Mitchell", "Carter", "Roberts", "Turner", "Phillips", "Evans", "Parker", "Edwards"
+
+
+    "Mitchell", "Carter", "Roberts", "Turner", "Phillips", "Evans", "Parker", "Edwards",
+
+
+    "Santoso", "Wijaya", "Saputra", "Hidayat", "Nugroho", "Pratama", "Kusuma", "Wibowo"
+
+
 ]
 
 
-def generate_name() -> Tuple[str, str]:
-    return random.choice(FIRST_NAMES), random.choice(LAST_NAMES)
+
+
+
+
+
+
+def generate_name(gender: str = None) -> Tuple[str, str]:
+
+
+    if gender == "male":
+
+
+        first = random.choice(MALE_FIRST_NAMES)
+
+
+    elif gender == "female":
+
+
+        first = random.choice(FEMALE_FIRST_NAMES)
+
+
+    else:
+
+
+        # Fallback if no gender specified
+
+
+        all_names = MALE_FIRST_NAMES + FEMALE_FIRST_NAMES
+
+
+        first = random.choice(all_names)
+
+
+        
+
+
+    return first, random.choice(LAST_NAMES)
+
+
+
+
+
+
 
 
 def generate_email(first: str, last: str, domain: str) -> str:
+
+
+    # ... (kode sama) ...
+
+
     patterns = [
+
+
         f"{first[0].lower()}{last.lower()}{random.randint(100, 999)}",
+
+
         f"{first.lower()}.{last.lower()}{random.randint(10, 99)}",
+
+
         f"{last.lower()}{first[0].lower()}{random.randint(100, 999)}"
+
+
     ]
+
+
     return f"{random.choice(patterns)}@{domain}"
 
 
+
+
+
+
+
+
 def generate_birth_date() -> str:
+
+
+    # ... (kode sama) ...
+
+
     year = random.randint(2000, 2006)
+
+
     month = random.randint(1, 12)
+
+
     day = random.randint(1, 28)
+
+
     return f"{year}-{month:02d}-{day:02d}"
 
 
+
+
+
+
+
+
 # ============ DOCUMENT GENERATOR ============
+
+
 # Impor fungsi dari modul baru
+
+
 from services.utils.document_generator import create_student_id_front, create_student_id_back, create_transcript_document, create_tuition_document
+
+
 from services.utils.data_generator import generate_random_data
 
-def generate_student_id(first: str, last: str, school: str) -> bytes:
-    """Generate fake student ID card using the new document generator"""
-    # Generate data for the student ID
+
+import os
+
+
+import glob
+
+
+from services.utils.university_presets import get_university_preset
+
+
+
+
+
+def generate_student_id(first: str, last: str, org_data: Dict, gender: str = None) -> bytes:
+
+
+    """Generate fake student ID card using presets or random data with REAL ASSETS"""
+
+
+    # Generate base random data
+
+
     data = generate_random_data()
-    # Update the data with the specific information provided
-    data.update({
-        "student_name": f"{last} {first}",
-        "university_name": school,
-    })
+
+
+    
+
+
+    # Cek apakah ada preset manual untuk universitas ini
+
+
+    preset = get_university_preset(org_data.get("id"))
+
+
+    
+
+
+    custom_logo = None
+
+
+    custom_photo = None
+
+
+    
+
+
+    # --- LOGIKA PEMILIHAN FOTO ---
+
+
+    # Gunakan gender yang diberikan untuk sinkronisasi nama-foto
+
+
+    target_gender = gender if gender else random.choice(["male", "female"])
+
+
+    
+
+
+    photo_dir = os.path.join("assets", "photos", target_gender)
+
+
+    
+
+
+    if os.path.exists(photo_dir):
+
+
+        # Cari semua file gambar di folder gender tersebut
+
+
+        valid_extensions = ["*.jpg", "*.jpeg", "*.png", "*.webp"]
+
+
+        photo_files = []
+
+
+        for ext in valid_extensions:
+
+
+            photo_files.extend(glob.glob(os.path.join(photo_dir, ext)))
+
+
+        
+
+
+        if photo_files:
+
+
+            custom_photo = random.choice(photo_files)
+
+
+            logger.info(f"Picked random {target_gender} photo: {custom_photo}")
+
+
+
+
+
+    if preset:
+
+
+        # Gunakan data manual yang valid
+
+
+        logger.info(f"Using manual preset for {preset['name']}")
+
+
+        
+
+
+        # Generate ID sesuai format kampus
+
+
+        student_id = preset['id_format']() if callable(preset['id_format']) else str(random.randint(10000000, 99999999))
+
+
+        
+
+
+        preset_data = {
+
+
+            "student_name": f"{first} {last}",
+
+
+            "university_name": preset['name'],
+
+
+            "card_subtitle": preset.get('card_title', 'STUDENT ID'),
+
+
+            "card_color": preset['colors'][0], # Warna utama
+
+
+            "student_id": student_id,
+
+
+            "college": random.choice(preset['colleges']),
+
+
+            "address": preset['address'],
+
+
+            "card_notice": f"This card is the property of {preset['name']}.",
+
+
+        }
+
+
+        
+
+
+        # Cek apakah logo file ada di assets
+
+
+        if "logo_file" in preset:
+
+
+            logo_path = os.path.join("assets", "logos", preset["logo_file"])
+
+
+            if os.path.exists(logo_path):
+
+
+                custom_logo = logo_path
+
+
+                logger.info(f"Loaded custom logo: {logo_path}")
+
+
+        
+
+
+        data.update(preset_data)
+
+
+    else:
+
+
+        # Fallback to generic data (or partial random)
+
+
+        data.update({
+
+
+            "student_name": f"{last} {first}",
+
+
+            "university_name": org_data.get("name"),
+
+
+        })
+
+
+
+
 
     # Create the front of the student ID card
-    img_buffer = create_student_id_front(data)
+
+
+    img_buffer = create_student_id_front(data, custom_logo_path=custom_logo, custom_photo_path=custom_photo)
+
+
     return img_buffer.getvalue()
 
 
@@ -396,8 +732,11 @@ class SheerIDVerifier:
             check_data, check_status = self._request("GET", f"/verification/{self.vid}")
             current_step = check_data.get("currentStep", "") if check_status == 200 else ""
             
+            # Tentukan gender untuk sinkronisasi nama dan foto
+            gender = random.choice(["male", "female"])
+            
             if not first_name or not last_name:
-                first_name, last_name = generate_name()
+                first_name, last_name = generate_name(gender)
             
             if school_id:
                 self.org = next((u for u in UNIVERSITIES if str(u["id"]) == school_id), None)
@@ -416,7 +755,7 @@ class SheerIDVerifier:
             if not birth_date:
                 birth_date = generate_birth_date()
             
-            logger.info(f"Student: {first_name} {last_name}")
+            logger.info(f"Student: {first_name} {last_name} ({gender})")
             logger.info(f"Email: {email}")
             logger.info(f"School: {self.org['name']}")
             logger.info(f"DOB: {birth_date}")
@@ -424,24 +763,10 @@ class SheerIDVerifier:
             logger.info(f"Starting step: {current_step}")
             
             logger.info("Step 1: Generating student documents...")
-            # Generate multiple documents for more comprehensive verification
-            data = generate_random_data()
-            # Update the data with the specific information provided
-            data.update({
-                "student_name": f"{last_name} {first_name}",
-                "university_name": self.org["name"],
-            })
-
-            # Create multiple documents for verification
-            documents = {
-                "student_id_front": create_student_id_front(data),
-                "student_id_back": create_student_id_back(data),
-                "transcript": create_transcript_document(data),
-                "tuition": create_tuition_document(data)
-            }
-
-            # Use the student ID front as the main document for upload
-            doc = documents["student_id_front"].getvalue()
+            
+            # Gunakan fungsi helper yang sudah support PRESET MANUAL & GENDER SYNC
+            # Ini akan mengembalikan bytes dari student_id_front yang sudah disesuaikan
+            doc = generate_student_id(first_name, last_name, self.org, gender=gender)
             logger.info(f"Main document size: {len(doc)/1024:.1f} KB")
 
             if current_step == "collectStudentPersonalInfo":
