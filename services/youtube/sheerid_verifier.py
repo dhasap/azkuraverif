@@ -84,35 +84,19 @@ stats = Stats()
 def select_university(locale: str = None) -> Dict:
     """
     Weighted random selection based on success rates.
-    UPDATE: YouTube program seems to reject ID/VN universities. 
-    Forcing US universities for better success rate.
+    UPDATE: YouTube program has a very strict organization whitelist.
+    Only Penn State (2565) is confirmed working consistently.
+    Other top US universities like CMU (602) are rejected.
     """
-    candidates = UNIVERSITIES
-    
-    # Filter for US universities only (domain ends with .edu) as they have highest success rate for YouTube
-    us_candidates = [u for u in candidates if u['domain'].endswith('.edu') and 'ph' not in u['domain']]
-    if us_candidates:
-        candidates = us_candidates
-
-    weights = []
-    for uni in candidates:
-        # Give higher weight to proven working universities
-        base_weight = uni["weight"]
-        if uni["id"] == 2565: # Penn State
-            base_weight *= 2
-            
-        weight = base_weight * (stats.get_rate(uni["name"]) / 50)
-        weights.append(max(1, weight))
-    
-    total = sum(weights)
-    r = random.uniform(0, total)
-    
-    cumulative = 0
-    for uni, weight in zip(candidates, weights):
-        cumulative += weight
-        if r <= cumulative:
-            return {**uni, "idExtended": str(uni["id"])}
-    return {**candidates[0], "idExtended": str(candidates[0]["id"])}
+    # Force Penn State for reliability
+    # ID: 2565, Name: Pennsylvania State University-Main Campus
+    return {
+        "id": 2565,
+        "name": "Pennsylvania State University-Main Campus",
+        "domain": "psu.edu",
+        "weight": 100,
+        "idExtended": "2565"
+    }
 
 
 # ============ UTILITIES ============
@@ -340,7 +324,8 @@ class SheerIDVerifier:
                 "Connection": "keep-alive",
                 "Accept": "*/*",
             }
-            resp = self.client.put(url, content=data, headers=headers, timeout=60)
+            # Gunakan 'data' alih-alih 'content' untuk kompatibilitas curl_cffi/requests
+            resp = self.client.put(url, data=data, headers=headers, timeout=60)
             return 200 <= resp.status_code < 300
         except Exception as e:
             logger.error(f"Upload failed: {e}")
