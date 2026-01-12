@@ -490,9 +490,9 @@ class SheerIDVerifier:
                     }
                 }
                 
-                # Add externalUserId if present
+                # Add externalUserId if present (ONLY IN METADATA)
                 if self.external_user_id:
-                    body["externalUserId"] = self.external_user_id
+                    # body["externalUserId"] = self.external_user_id # REMOVED: Causes 400 Bad Request
                     body["metadata"]["externalUserId"] = self.external_user_id
                 
                 # Add oid if present (as orderId or just oid in metadata)
@@ -503,6 +503,12 @@ class SheerIDVerifier:
                 data, status = self._request("POST", f"/verification/{self.vid}/step/collectStudentPersonalInfo", body)
 
                 if status != 200:
+                    logger.error(f"Submit info failed: {status}")
+                    try:
+                        logger.error(f"Response: {data}") # Log response details
+                    except:
+                        pass
+
                     # Jika gagal dengan 400, coba tanpa beberapa field yang mungkin tidak diperlukan
                     if status == 400:
                         logger.info("Retrying with simplified metadata...")
@@ -514,21 +520,26 @@ class SheerIDVerifier:
                             "organization": {"id": self.org["id"], "idExtended": self.org["idExtended"],
                                             "name": self.org["name"]},
                             "deviceFingerprintHash": self.fingerprint,
-                            "locale": self.locale
+                            "locale": self.locale,
+                            "metadata": {} # Ensure metadata exists
                         }
                         
                         if self.external_user_id:
-                            body_retry["externalUserId"] = self.external_user_id
+                            # body_retry["externalUserId"] = self.external_user_id # REMOVED
+                            body_retry["metadata"]["externalUserId"] = self.external_user_id
                         
                         if self.oid:
-                            if "metadata" not in body_retry:
-                                body_retry["metadata"] = {}
                             body_retry["metadata"]["oid"] = self.oid
                             body_retry["metadata"]["orderId"] = self.oid
 
                         data, status = self._request("POST", f"/verification/{self.vid}/step/collectStudentPersonalInfo", body_retry)
 
                         if status != 200:
+                            logger.error(f"Retry submit info failed: {status}")
+                            try:
+                                logger.error(f"Retry Response: {data}")
+                            except:
+                                pass
                             stats.record(self.org["name"], False)
                             return {"success": False, "message": f"Submit failed: {status}"}
                     else:
