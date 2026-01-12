@@ -1,16 +1,3 @@
-"""
-Google One (Gemini) Student Verification Tool
-SheerID Student Verification for Google One AI Premium
-
-Enhanced with:
-- Success rate tracking per organization
-- Weighted university selection
-- Rate limiting avoidance
-- Transcript generation for higher success
-
-Author: ThanhNguyxn
-"""
-
 import re
 import json
 import time
@@ -26,6 +13,8 @@ from PIL import Image, ImageDraw, ImageFont
 from services.utils.universities import UNIVERSITIES
 from services.utils.anti_detect import get_headers, get_fingerprint, random_delay, create_session
 from services.utils.email_client import EmailClient
+from services.utils.names import generate_name
+from services.utils.id_card_helper import generate_student_id_card
 
 logging.basicConfig(
     level=logging.INFO,
@@ -96,33 +85,6 @@ def select_university() -> Dict:
         if r <= cumulative:
             return {**uni, "idExtended": str(uni["id"])}
     return {**UNIVERSITIES[0], "idExtended": str(UNIVERSITIES[0]["id"])}
-
-
-# ============ UTILITIES ============
-FIRST_NAMES = [
-    "James", "John", "Robert", "Michael", "William", "David", "Richard", "Joseph",
-    "Thomas", "Christopher", "Charles", "Daniel", "Matthew", "Anthony", "Mark",
-    "Donald", "Steven", "Andrew", "Paul", "Joshua", "Kenneth", "Kevin", "Brian",
-    "George", "Timothy", "Ronald", "Edward", "Jason", "Jeffrey", "Ryan",
-    "Mary", "Patricia", "Jennifer", "Linda", "Barbara", "Elizabeth", "Susan",
-    "Jessica", "Sarah", "Karen", "Lisa", "Nancy", "Betty", "Margaret", "Sandra",
-    "Ashley", "Kimberly", "Emily", "Donna", "Michelle", "Dorothy", "Carol",
-    "Amanda", "Melissa", "Deborah", "Stephanie", "Rebecca", "Sharon", "Laura",
-    "Emma", "Olivia", "Ava", "Isabella", "Sophia", "Mia", "Charlotte", "Amelia"
-]
-LAST_NAMES = [
-    "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
-    "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson",
-    "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson",
-    "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson", "Walker",
-    "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill",
-    "Flores", "Green", "Adams", "Nelson", "Baker", "Hall", "Rivera", "Campbell",
-    "Mitchell", "Carter", "Roberts", "Turner", "Phillips", "Evans", "Parker", "Edwards"
-]
-
-
-def generate_name() -> Tuple[str, str]:
-    return random.choice(FIRST_NAMES), random.choice(LAST_NAMES)
 
 
 def generate_email(first: str, last: str, domain: str) -> str:
@@ -233,21 +195,6 @@ def generate_transcript(first: str, last: str, school: str, dob: str) -> bytes:
 from services.utils.document_generator import create_student_id_front, create_student_id_back, create_transcript_document, create_tuition_document
 from services.utils.data_generator import generate_random_data
 
-def generate_student_id(first: str, last: str, school: str) -> bytes:
-    """Generate fake student ID card using the new document generator"""
-    # Generate data for the student ID
-    data = generate_random_data()
-    # Update the data with the specific information provided
-    data.update({
-        "student_name": f"{last} {first}",
-        "university_name": school,
-    })
-
-    # Create the front of the student ID card
-    img_buffer = create_student_id_front(data)
-    return img_buffer.getvalue()
-
-
 # ============ VERIFIER ============
 class SheerIDVerifier:
     """Gemini Student Verification with enhanced features"""
@@ -307,7 +254,8 @@ class SheerIDVerifier:
                 "Connection": "keep-alive",
                 "Accept": "*/*",
             }
-            resp = self.client.put(url, content=data, headers=headers, timeout=60)
+            # Gunakan 'data' alih-alih 'content' untuk kompatibilitas curl_cffi/requests
+            resp = self.client.put(url, data=data, headers=headers, timeout=60)
             return 200 <= resp.status_code < 300
         except Exception as e:
             logger.error(f"Upload failed: {e}")
@@ -359,8 +307,11 @@ class SheerIDVerifier:
             check_data, check_status = self._request("GET", f"/verification/{self.vid}")
             current_step = check_data.get("currentStep", "") if check_status == 200 else ""
             
+            # Tentukan gender untuk sinkronisasi nama dan foto
+            gender = random.choice(["male", "female"])
+            
             if not first_name or not last_name:
-                first_name, last_name = generate_name()
+                first_name, last_name = generate_name(gender)
             
             if school_id:
                 self.org = next((u for u in UNIVERSITIES if str(u["id"]) == school_id), None)
@@ -375,7 +326,7 @@ class SheerIDVerifier:
             if not birth_date:
                 birth_date = generate_birth_date()
             
-            logger.info(f"Student: {first_name} {last_name}")
+            logger.info(f"Student: {first_name} {last_name} ({gender})")
             logger.info(f"Email: {email}")
             logger.info(f"School: {self.org['name']}")
             
@@ -386,25 +337,11 @@ class SheerIDVerifier:
                 filename = "transcript.png"
             else:
                 logger.info("Step 1: Generating student documents...")
-                # Generate multiple documents for more comprehensive verification
-                data = generate_random_data()
-                # Update the data with the specific information provided
-                data.update({
-                    "student_name": f"{last_name} {first_name}",
-                    "university_name": self.org["name"],
-                })
-
-                # Create multiple documents for verification
-                documents = {
-                    "student_id_front": create_student_id_front(data),
-                    "student_id_back": create_student_id_back(data),
-                    "transcript": create_transcript_document(data),
-                    "tuition": create_tuition_document(data)
-                }
-
-                # Use the student ID front as the main document for upload
-                doc = documents["student_id_front"].getvalue()
+                
+                # Gunakan fungsi helper yang sudah support PRESET MANUAL & GENDER SYNC
+                doc = generate_student_id_card(first_name, last_name, self.org, gender=gender)
                 filename = "student_card.png"
+                
             logger.info(f"Size: {len(doc)/1024:.1f} KB")
 
             if current_step == "collectStudentPersonalInfo":
