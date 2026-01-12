@@ -82,35 +82,26 @@ stats = Stats()
 
 
 def select_university(locale: str = None) -> Dict:
-    """Weighted random selection based on success rates"""
+    """
+    Weighted random selection based on success rates.
+    UPDATE: YouTube program seems to reject ID/VN universities. 
+    Forcing US universities for better success rate.
+    """
     candidates = UNIVERSITIES
     
-    # Filter by locale if provided
-    if locale:
-        loc = locale.lower()
-        suffix = None
-        if loc == 'id' or 'id-' in loc: suffix = '.id'
-        elif loc == 'vi' or 'vn' in loc: suffix = '.vn'
-        elif loc == 'th': suffix = '.th'
-        elif loc == 'ph' or 'fil' in loc: suffix = '.ph'
-        elif loc == 'in' or 'hi' in loc: suffix = '.in'
-        elif loc == 'jp' or 'ja' in loc: suffix = '.jp'
-        elif loc == 'kr' or 'ko' in loc: suffix = '.kr'
-        elif loc == 'br' or 'pt' in loc: suffix = '.br'
-        elif 'au' in loc: suffix = '.au'
-        elif 'gb' in loc or 'uk' in loc: suffix = '.uk'
-        elif 'ca' in loc: suffix = '.ca'
-        elif 'de' in loc: suffix = '.de'
-        elif 'sg' in loc: suffix = '.sg'
-        
-        if suffix:
-            filtered = [u for u in candidates if u['domain'].endswith(suffix)]
-            if filtered:
-                candidates = filtered
+    # Filter for US universities only (domain ends with .edu) as they have highest success rate for YouTube
+    us_candidates = [u for u in candidates if u['domain'].endswith('.edu') and 'ph' not in u['domain']]
+    if us_candidates:
+        candidates = us_candidates
 
     weights = []
     for uni in candidates:
-        weight = uni["weight"] * (stats.get_rate(uni["name"]) / 50)
+        # Give higher weight to proven working universities
+        base_weight = uni["weight"]
+        if uni["id"] == 2565: # Penn State
+            base_weight *= 2
+            
+        weight = base_weight * (stats.get_rate(uni["name"]) / 50)
         weights.append(max(1, weight))
     
     total = sum(weights)
