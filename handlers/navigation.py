@@ -284,7 +284,8 @@ async def nav_information(message: types.Message):
         f"   • K12 Teacher Verification\n"
         f"   • Military/Veteran Verification\n"
         f"   • Google One/Bolt.new\n"
-        f"   • Perplexity Pro Student\n\n"
+        f"   • Perplexity Pro Student\n"
+        f"   • ID Card Generator\n\n"
         f"🏆 <b>Keunggulan Kami:</b>\n"
         f"   • Proses otomatis cepat\n"
         f"   • Data valid terotentikasi\n"
@@ -300,3 +301,18 @@ async def nav_information(message: types.Message):
     )
     kb = keyboards.main_menu()
     await message.answer(text, reply_markup=kb, parse_mode="HTML", disable_web_page_preview=True)
+
+@router.callback_query(F.data == "menu_id_card")
+async def show_id_card_menu(callback_query: types.CallbackQuery):
+    """Tampilkan menu ID card generator"""
+    await callback_query.message.edit_text(
+        "💳 <b>ID CARD GENERATOR</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Pilih jenis ID card yang ingin Anda buat:\n\n"
+        "🎓 <b>Student ID</b>: ID untuk pelajar/mahasiswa\n"
+        "👨‍🏫 <b>Teacher ID</b>: ID untuk guru/dosen\n"
+        "🎖️ <b>Military ID</b>: ID untuk militer/veteran\n\n"
+        "<i>Pastikan Anda memiliki foto profil yang sesuai sebelum membuat ID card.</i>",
+        reply_markup=keyboards.id_card_menu(),
+        parse_mode="HTML"
+    )

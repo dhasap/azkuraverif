@@ -206,6 +206,8 @@ async def show_verification_options(callback: types.CallbackQuery):
         f"   • Perplexity Pro (2 Poin)\n\n"
         f"🎖️ <b>Militer</b>\n"
         f"   • Military/Veteran Verification (3 Poin)\n\n"
+        f"💳 <b>ID Card Generator</b>\n"
+        f"   • Student ID, Teacher ID, Military ID (Gratis)\n\n"
         f"✨ <b>Pilih kategori yang Anda butuhkan:</b>"
     )
 

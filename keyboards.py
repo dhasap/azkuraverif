@@ -50,10 +50,13 @@ def main_menu() -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(text="👤 Profil Saya", callback_data="menu_profile"),
-            InlineKeyboardButton(text="🎁 Daily Check-in", callback_data="action_checkin"),
+            InlineKeyboardButton(text="💳 ID Card Generator", callback_data="menu_id_card"),
         ],
         [
+            InlineKeyboardButton(text="🎁 Daily Check-in", callback_data="action_checkin"),
             InlineKeyboardButton(text="💳 Topup & Redeem", callback_data="menu_topup"),
+        ],
+        [
             InlineKeyboardButton(text="❓ Panduan & Bantuan", callback_data="menu_help"),
         ],
         [
@@ -74,8 +77,11 @@ def service_categories() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🎖️ Militer", callback_data="cat_military"),
         ],
         [
-            InlineKeyboardButton(text="🔙 Kembali", callback_data="menu_home"),
+            InlineKeyboardButton(text="💳 ID Card Generator", callback_data="menu_id_card"),
             InlineKeyboardButton(text="🔍 Lihat Semua", callback_data="cat_all"),
+        ],
+        [
+            InlineKeyboardButton(text="🔙 Kembali", callback_data="menu_home"),
         ]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -156,6 +162,23 @@ def all_services() -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(text="🔙 Kembali", callback_data="verify_now"),
             InlineKeyboardButton(text="🏠 Menu Utama", callback_data="menu_home"),
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+def id_card_menu() -> InlineKeyboardMarkup:
+    """Menu ID Card Generator - Desain Modern"""
+    keyboard = [
+        [
+            InlineKeyboardButton(text="🎓 Student ID", callback_data="id_type:student"),
+            InlineKeyboardButton(text="👨‍🏫 Teacher ID", callback_data="id_type:teacher"),
+        ],
+        [
+            InlineKeyboardButton(text="🎖️ Military ID", callback_data="id_type:military"),
+        ],
+        [
+            InlineKeyboardButton(text="🏠 Kembali ke Menu Utama", callback_data="menu_home"),
+            InlineKeyboardButton(text="🔙 Kembali", callback_data="verify_now"),
         ]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)

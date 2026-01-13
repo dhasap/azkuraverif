@@ -124,3 +124,10 @@ helpers/stats.json
 
 # Source Code Generator ID Student
 azkuraidgen
+
+# ID Card Generator output
+output/id_cards/
+temp/
+
+# Runtime statistics files
+**/stats.json

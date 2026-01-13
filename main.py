@@ -6,7 +6,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 import config
 from database_turso import db
-from handlers import start, user_actions, verification, admin, navigation
+from handlers import start, user_actions, verification, admin, navigation, id_card_handler
 from middlewares.forcesub import ForceSubMiddleware
 
 # Konfigurasi Logging
@@ -39,6 +39,7 @@ async def main():
     dp.include_router(start.router)
     dp.include_router(user_actions.router)
     dp.include_router(verification.router)
+    dp.include_router(id_card_handler.router)
 
     # 4. Start Polling
     logger.info("🤖 Bot sedang berjalan...")
